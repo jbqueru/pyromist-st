@@ -29,12 +29,13 @@ soup:
 	move.w	sr,d0
 	btst.l	#13,d0
 	beq.s	.setup_wrong
+; TODO: try testing MFP I/O bit 7
 	btst.b	#1,$ffff8260.w ; bug in Hatari where this doesn't trigger?
 	beq.s	soup2
 .setup_wrong:
 	rts
 soup2:
-; Save status register, mask all interrupts
+; Save status register, disable all interrupts
 	move.w	sr,save_sr
 	move.w	#$2700,sr
 
@@ -57,17 +58,30 @@ soup2:
 	move.b	#0,$ffff8260.w
 	move.b	#2,$ffff820a.w
 
-; Save MFP status, disable all MFP interrupts
-	move.b	$fffffa07.w,save_mfp_a
+; Save MFP enable status, disable all MFP interrupts, set auto-clear
+	move.b	$fffffa07.w,save_mfp_enable_a
 	clr.b	$fffffa07.w
-	move.b	$fffffa09.w,save_mfp_b
+	move.b	$fffffa09.w,save_mfp_enable_b
 	clr.b	$fffffa09.w
+	move.b	$fffffa17.w,save_mfp_vector
+	move.b	#$40,$fffffa17.w
 
-; Save interrupt vectors
-	move.l	$68.w,save_hbl
+; Save and set up MFP timer B
+; Unmask timer b (this masks other unused ones as a side effect)
+	move.b	$fffffa13.w,save_mfp_mask_a
+	move.b	#1,$fffffa13.w
+
+; Set the timer b to count events, to fire on every event
+	move.b	$fffffa1b.w,save_mfp_timer_b_control
+	move.b	#8,$fffffa1b.w
+	move.b	$fffffa21.w,save_mfp_timer_b_data
+	move.b	#1,$fffffa21.w
+
+; Save interrupt vectors, set ours
 	move.l	$70.w,save_vbl
-	move.l	$120.w,save_mfp_hbl
+	move.l	$120.w,save_hbl
 	move.l	#vbl,$70.w
+	move.l	#hbl,$120.w
 
 ; Get framebuffer address from hardware registers
 ; TODO: Set up our own framebuffer instead
@@ -86,7 +100,8 @@ soup2:
 	move.l	d0,(a0)+
 	dbra.w	d1,.clear_framebuffer
 
-; Enable VBL interrupt
+; Enable interrupts
+	move.b	#1,$fffffa07.w
 	move #$2300,sr
 
 ; Wait for a keypress
@@ -95,17 +110,22 @@ soup2:
 	cmp.b	#$39,$fffffc02.w
 	bne.s .waitkey
 
-; Mask interrupts
+; Disable interrupts
 	move.w	#$2700,sr
+	clr.b	$fffffa07.w
+	clr.b	$fffffa09.w
 
 ; Restore interrupt vectors
-	move.l	save_hbl,$68.w
 	move.l	save_vbl,$70.w
-	move.l	save_mfp_hbl,$120.w
+	move.l	save_hbl,$120.w
 
-; Restore MFP enable status
-	move.b	save_mfp_a,$fffffa07.w
-	move.b	save_mfp_b,$fffffa09.w
+; Restore MFP status
+	move.b	save_mfp_timer_b_control,$fffffa1b.w
+	move.b	save_mfp_timer_b_data,$fffffa21.w
+	move.b	save_mfp_mask_a,$fffffa13.w
+	move.b	save_mfp_vector,$fffffa17.w
+	move.b	save_mfp_enable_a,$fffffa07.w
+	move.b	save_mfp_enable_b,$fffffa09.w
 
 ; Restore graphics status
 	move.b	save_sync,$ffff820a.w
@@ -124,6 +144,11 @@ soup2:
 	rts
 
 vbl:
+	move.w	#0,$ffff8240.w
+	rte
+
+hbl:
+	not.w	$ffff8240.w
 	rte
 
 ; Initialized data
@@ -137,8 +162,6 @@ save_hbl:
 	ds.l	1
 save_vbl:
 	ds.l	1
-save_mfp_hbl:
-	ds.l	1
 framebuffer:
 	ds.l	1
 
@@ -147,9 +170,17 @@ save_sr:
 save_palette:
 	ds.w	16
 
-save_mfp_a:
+save_mfp_enable_a:
 	ds.b	1
-save_mfp_b:
+save_mfp_enable_b:
+	ds.b	1
+save_mfp_mask_a:
+	ds.b	1
+save_mfp_vector:
+	ds.b	1
+save_mfp_timer_b_control:
+	ds.b	1
+save_mfp_timer_b_data:
 	ds.b	1
 save_res:
 	ds.b	1
