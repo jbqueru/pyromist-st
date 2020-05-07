@@ -9,7 +9,9 @@ on Hatari (currently v2.1.0) with EmuTOS (0.9.12, 192k US), using
 RMAC as the assembler.
 
 My Hatari configuration:
+
 	hatari --confirm-quit no --memsize 512 --compatible yes --tos ~/develop/bin/emutos/emutos-192k-0.9.12/etos192us.img --harddrive out/
 
 My RMAC configuration:
+
 	rmac -s -v -p pyromist.s -o out/pyromist.prg
