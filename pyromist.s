@@ -23,7 +23,7 @@
 	move.w	#0,-(sp)
 	trap	#1
 
-; This is the actual start of the demo.
+; Start of supervisor code
 soup:
 ; Check that we're in supervisor mode, on a color monitor, exit otherwise
 	move.w	sr,d0
@@ -34,13 +34,24 @@ soup:
 	beq.s	soup2
 .setup_wrong:
 	rts
+
+; This is the actual start of the demo
 soup2:
+; Clear BSS
+	lea.l	start_bss,a0
+	lea.l	end_bss,a1
+.clear_bss:
+	clr.b	(a0)+
+	cmp.l	a0,a1
+	bne.s	.clear_bss
+
 ; Save status register, disable all interrupts
 	move.w	sr,save_sr
 	move.w	#$2700,sr
 
-; TODO: Set up the stack
-; TODO: Initialize BSS
+; Set up stack
+	move.l	sp,save_stack
+	lea.l	stack_top,sp
 
 ; Save palette, paint it black
 	lea.l	$ffff8240.w,a0
@@ -53,8 +64,10 @@ soup2:
 	dbra.w	d0,.copy_palette
 
 ; Save and set graphics state. It's a European demo, 50Hz FTW
-	move.b	$ffff8260.w,save_res
-	move.b	$ffff820a.w,save_sync
+	move.b	$ffff8260.w,save_fb_res
+	move.b	$ffff820a.w,save_fb_sync
+	move.b	$ffff8201.w,save_fb_high_addr
+	move.b	$ffff8203.w,save_fb_low_addr
 	move.b	#0,$ffff8260.w
 	move.b	#2,$ffff820a.w
 
@@ -84,21 +97,11 @@ soup2:
 	move.l	#hbl,$120.w
 
 ; Get framebuffer address from hardware registers
-; TODO: Set up our own framebuffer instead
-	moveq.l	#0,d0
-	move.b	$ffff8201.w,d0
-	swap.w	d0
-	move.b	$ffff8203.w,d0
-	lsl.w	#8,d0
+	move.l	#raw_fb+255,d0
+	clr.b	d0
 	move.l	d0,framebuffer
-
-; Clear the framebuffer
-	move.l	d0,a0
-	move.w	#8000,d1
-	moveq.l	#0,d0
-.clear_framebuffer:
-	move.l	d0,(a0)+
-	dbra.w	d1,.clear_framebuffer
+	move.b	framebuffer+1,$ffff8201.w
+	move.b	framebuffer+2,$ffff8203.w
 
 ; Enable interrupts
 	move.b	#1,$fffffa07.w
@@ -107,6 +110,7 @@ soup2:
 ; Wait for a keypress
 ; NOTE: would be good to do that with an interrupt handler, but I'm lazy
 .waitkey:
+	stop	#$2300
 	cmp.b	#$39,$fffffc02.w
 	bne.s .waitkey
 
@@ -128,8 +132,10 @@ soup2:
 	move.b	save_mfp_enable_b,$fffffa09.w
 
 ; Restore graphics status
-	move.b	save_sync,$ffff820a.w
-	move.b	save_res,$ffff8260.w
+	move.b	save_fb_sync,$ffff820a.w
+	move.b	save_fb_res,$ffff8260.w
+	move.b	save_fb_high_addr,$ffff8201.w
+	move.b	save_fb_low_addr,$ffff8203.w
 
 ; Restore palette
 	lea.l	$ffff8240.w,a0
@@ -138,6 +144,9 @@ soup2:
 .restore_palette:
 	move.w	(a1)+,(a0)+
 	dbra.w	d0,.restore_palette
+
+; Restore stack
+	move.l	save_stack,sp
 
 ; Restore status register, exit
 	move.w	save_sr,sr
@@ -158,6 +167,10 @@ my_palette:
 
 ; Uninitialized memory
 	.bss
+start_bss:
+
+save_stack:
+	ds.l	1
 save_hbl:
 	ds.l	1
 save_vbl:
@@ -182,7 +195,21 @@ save_mfp_timer_b_control:
 	ds.b	1
 save_mfp_timer_b_data:
 	ds.b	1
-save_res:
+save_fb_low_addr:
 	ds.b	1
-save_sync:
+save_fb_high_addr:
 	ds.b	1
+save_fb_res:
+	ds.b	1
+save_fb_sync:
+	ds.b	1
+
+	.even
+stack_bottom:
+	ds.b	512
+stack_top:
+
+raw_fb:
+	ds.b	32255
+
+end_bss:
