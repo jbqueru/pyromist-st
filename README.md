@@ -1,4 +1,4 @@
-# pyromist.st
+# PyromiST
 I am Djaybee from the MegaBuSTers
 
 This is an attempt at building an Atari ST demoscreen in 2020, after
