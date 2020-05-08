@@ -124,6 +124,7 @@ main_loop:
 .waitvbl:
 	stop	#$2300
 	tst.b	vbl_reached
+	beq.s	.waitvbl
 ; Check for a keypress
 ; NOTE: would be good to do that with an interrupt handler, but I'm lazy
 	cmp.b	#$39,$fffffc02.w
