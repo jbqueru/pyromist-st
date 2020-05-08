@@ -99,20 +99,37 @@ soup2:
 ; Get framebuffer address from hardware registers
 	move.l	#raw_fb+255,d0
 	clr.b	d0
-	move.l	d0,framebuffer
-	move.b	framebuffer+1,$ffff8201.w
-	move.b	framebuffer+2,$ffff8203.w
+	move.l	d0,back_buffer
+	add.l	#32000,d0
+	move.l	d0,front_buffer
+	move.b	front_buffer+1,$ffff8201.w
+	move.b	front_buffer+2,$ffff8203.w
 
 ; Enable interrupts
 	move.b	#1,$fffffa07.w
 	move #$2300,sr
 
-; Wait for a keypress
-; NOTE: would be good to do that with an interrupt handler, but I'm lazy
-.waitkey:
+main_loop:
+; Swap framebuffers
+	move.l	back_buffer,d0
+	move.l	front_buffer,back_buffer
+	move.l	d0,front_buffer
+	lsr.w	#8,d0
+	move.b	d0,$ffff8203.w
+	swap.w	d0
+	move.b	d0,$ffff8201.w
+
+; Wait for next VBL
+	clr.b	vbl_reached
+.waitvbl:
 	stop	#$2300
+	tst.b	vbl_reached
+; Check for a keypress
+; NOTE: would be good to do that with an interrupt handler, but I'm lazy
 	cmp.b	#$39,$fffffc02.w
-	bne.s .waitkey
+	beq.s	.exit
+	bra	main_loop
+.exit:
 
 ; Disable interrupts
 	move.w	#$2700,sr
@@ -153,6 +170,7 @@ soup2:
 	rts
 
 vbl:
+	move.b	#1,vbl_reached
 	move.w	#0,$ffff8240.w
 	rte
 
@@ -175,7 +193,9 @@ save_hbl:
 	ds.l	1
 save_vbl:
 	ds.l	1
-framebuffer:
+front_buffer:
+	ds.l	1
+back_buffer:
 	ds.l	1
 
 save_sr:
@@ -204,12 +224,15 @@ save_fb_res:
 save_fb_sync:
 	ds.b	1
 
+vbl_reached:
+	ds.b	1
+
 	.even
 stack_bottom:
 	ds.b	512
 stack_top:
 
 raw_fb:
-	ds.b	32255
+	ds.b	32000+32000+255
 
 end_bss:
