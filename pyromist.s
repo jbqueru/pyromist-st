@@ -96,7 +96,7 @@ soup2:
 	move.l	#vbl,$70.w
 	move.l	#hbl,$120.w
 
-; Get framebuffer address from hardware registers
+; Set up our framebuffers
 	move.l	#raw_fb+255,d0
 	clr.b	d0
 	move.l	d0,back_buffer
@@ -198,6 +198,13 @@ main_loop:
 	move.b	save_fb_res,$ffff8260.w
 	move.b	save_fb_high_addr,$ffff8201.w
 	move.b	save_fb_low_addr,$ffff8203.w
+
+; Clear current framebuffer to avoid flashing on exit
+	move.l	front_buffer,a0
+	move.w	#7999,d0
+.clear_fb_exit:
+	clr.l	(a0)+
+	dbra	d0,.clear_fb_exit
 
 ; Restore palette
 	lea.l	$ffff8240.w,a0
