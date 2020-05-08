@@ -154,6 +154,105 @@ main_loop:
 	clr.w	text_position
 .done_scroll:
 
+; Get line coordinates in (d0,d1) and (d2,d3)
+	move.w	#0,d0	; x1
+	move.w	#0,d1	; y1
+	move.w	#319,d2	; x2
+	move.w	#199,d3 ; y2
+
+; Swap line ends if necessary so that d0 <= d2 (so that all lines draw left to right)
+	cmp.w	d0,d2
+	bge.s	.lines_ordered ; d2 >= d0
+	exg	d0,d2
+	exg	d1,d3
+.lines_ordered:
+
+; Compute end of line relative to start
+	move.w	#160,d4	; addr_offset
+	sub.w	d0,d2	; dx
+	sub.w	d1,d3	; dy
+; Adjust delta-y to be positive, negative values move in the other direction between lines
+	bge.s	.adjusted_dy ; d3 >= d1
+	neg.w	d3
+	neg.w	d4
+.adjusted_dy:
+
+; d0,d1 are x,y of the left end
+; d2,d3 are the pixel offset to the right end, both positive
+; d4 is the address offset when changing lines.
+
+; Compute start address and start pixel pattern
+	move.l	back_buffer,a0
+	mulu.w	#160,d1
+	lea.l	(a0,d1.w),a0
+	move.w	d0,d1
+	lsr.w	#1,d0
+	and.w	#248,d0
+	lea.l	2(a0,d0.w),a0
+	move.w	#$8000,d5 ; pixel pattern
+	and	#15,d1
+	lsr.w	d1,d5
+
+; Check which type of line we're drawing
+	cmp.w	d2,d3
+	blt.s	draw_h_line ; d3 < d2
+	beq.s	draw_d_line ; d3 = d2 - includes single-pixel lines
+
+; Draw a vertical-ish line
+draw_v_line:
+	swap.w	d2
+	clr.w	d2
+	divu	d3,d2
+	move.w	#$7fff,d6
+
+.draw_v_pixel:
+	or.w	d5,(a0)
+	add.w	d2,d6
+	bcc.s	.done_v_adjust
+	ror.w	d5
+	bcc.s	.done_v_adjust
+	addq.l	#8,a0
+.done_v_adjust:
+	add.w	d4,a0
+	dbra	d3,.draw_v_pixel
+
+	bra.s	done_line
+
+draw_h_line:
+; Draw a horizontal-ish line
+setup_h_slope:
+	swap.w	d3
+	clr.w	d3
+	divu	d2,d3
+	move.w	#$7fff,d6
+
+.draw_h_pixel:
+	or.w	d5,(a0)
+	add.w	d3,d6
+	bcc.s	.done_h_adjust1
+	add.w	d4,a0
+.done_h_adjust1:
+	ror.w	d5
+	bcc.s	.done_h_adjust2
+	addq.l	#8,a0
+.done_h_adjust2:
+	dbra	d2,.draw_h_pixel
+
+	bra.s	done_line
+
+
+draw_d_line:
+.draw_d_pixel:
+	or.w	d5,(a0)
+	ror.w	d5
+	bcc.s	.done_d_adjust
+	addq.l	#8,a0
+.done_d_adjust:
+	add.w	d4,a0
+	dbra	d3,.draw_d_pixel
+
+done_line:
+
 ; Swap framebuffers
 	move.l	back_buffer,d0
 	move.l	front_buffer,back_buffer
@@ -234,7 +333,7 @@ hbl:
 ; Initialized data
 	.data
 my_palette:
-	dc.w	0,$002,$004,$006,0,$020,$040,$060,0,$200,$400,$600,0,$222,$444,$666
+	dc.w	0,$657,$741,$741,0,0,0,0,0,0,0,0,0,0,0,0
 
 font:
 	dc.w	%0000000000000000
