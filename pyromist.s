@@ -172,11 +172,12 @@ main_loop:
 
 vbl:
 	move.b	#1,vbl_reached
-	move.w	#0,$ffff8240.w
+	move.w	#0,raster_color
 	rte
 
 hbl:
-	not.w	$ffff8240.w
+	add.w	#$71,raster_color
+	move.w	raster_color,$ffff8240.w
 	rte
 
 ; Initialized data
@@ -198,6 +199,9 @@ front_buffer:
 	ds.l	1
 back_buffer:
 	ds.l	1
+
+raster_color:
+	ds.w	1
 
 save_sr:
 	ds.w	1
