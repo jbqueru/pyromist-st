@@ -241,9 +241,11 @@ hbl:
 draw_line:
 ; Get line coordinates in (d0,d1) and (d2,d3)
 
-; Swap line ends if necessary so that d0 <= d2 (so that all lines draw left to right)
+; Swap line ends if necessary so that d0 >= d2, to draw lines right-to-left
+; Drawing right-to-left is faster, because the fastest way to shift a 16-bit
+; register by 1 is to add it to itself, but that only works to the left
 	cmp.w	d0,d2
-	bge.s	.lines_ordered ; d2 >= d0
+	ble.s	.lines_ordered ; d2 >= d0
 	exg	d0,d2
 	exg	d1,d3
 .lines_ordered:
@@ -251,6 +253,7 @@ draw_line:
 ; Compute end of line relative to start
 	move.w	#160,d4	; addr_offset
 	sub.w	d0,d2	; dx
+	neg.w	d2	; TODO: re-org registers to avoid this
 	sub.w	d1,d3	; dy
 ; Adjust delta-y to be positive, negative values move in the other direction between lines
 	bge.s	.adjusted_dy ; d3 >= d1
@@ -290,9 +293,10 @@ draw_v_line:
 	or.w	d5,(a0)
 	add.w	d2,d6
 	bcc.s	.done_v_adjust
-	ror.w	d5
-	bcc.s	.done_v_adjust
-	addq.l	#8,a0
+	add.w	d5,d5
+	bne.s	.done_v_adjust
+	subq.l	#8,a0
+	moveq.l	#1,d5
 .done_v_adjust:
 	add.w	d4,a0
 	dbra	d3,.draw_v_pixel
@@ -312,9 +316,10 @@ setup_h_slope:
 	bcc.s	.done_h_adjust1
 	add.w	d4,a0
 .done_h_adjust1:
-	ror.w	d5
-	bcc.s	.done_h_adjust2
-	addq.l	#8,a0
+	add.w	d5,d5
+	bne.s	.done_h_adjust2
+	subq.l	#8,a0
+	moveq.l	#1,d5
 .done_h_adjust2:
 	dbra	d2,.draw_h_pixel
 	rts
@@ -322,9 +327,10 @@ setup_h_slope:
 draw_d_line:
 .draw_d_pixel:
 	or.w	d5,(a0)
-	ror.w	d5
-	bcc.s	.done_d_adjust
-	addq.l	#8,a0
+	add.w	d5,d5
+	bne.s	.done_d_adjust
+	subq.l	#8,a0
+	moveq.l	#1,d5
 .done_d_adjust:
 	add.w	d4,a0
 	dbra	d3,.draw_d_pixel
