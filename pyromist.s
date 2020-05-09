@@ -106,7 +106,7 @@ soup2:
 	move.b	front_buffer+2,$ffff8203.w
 
 ; Enable interrupts
-	move.b	#1,$fffffa07.w
+;	move.b	#1,$fffffa07.w
 	move #$2300,sr
 
 main_loop:
