@@ -204,6 +204,8 @@ clear_screen:
 	clr.w	text_position
 .done_scroll:
 
+	bsr	draw_fast_line
+
 	move.w	#160,d0	; x1
 	move.w	#100,d1	; y1
 	move.w	line_end_x,d2	; x2
@@ -407,6 +409,123 @@ draw_d_line:
 .done_d_adjust:
 	add.w	d4,a0
 	dbra	d3,.draw_d_pixel
+	rts
+
+; Skeleton for fast line drawing (by segments) for vertical-ish lines
+
+; It's faster to draw lines right to left when drawing one pixel at a time.
+
+; When running a partial routine, it's easier to execute only the end
+; (by jumping in the middle of the code) than only the begninning
+; (because that requires patching the code then fixing the patch).
+
+; As a consequence, it's easier to anchor on the address at the end of the
+; segment, because that way it's always pointing to a pixel drawn in that
+; segment even when drawing a partial segment.
+
+; If the segments are less than 17 pixels wide, they all fit within 2 pixel
+; blocks, so that there's only 1 address change in the middle of the block.
+; If the starting pixel was already drawn by the previous segment, that only
+; allows 16 pixels of width, and from there 16 pixels of height at 45 degrees.
+; 16 high is convenient for multiplications (when computing or processing
+; the slope.
+
+; Segments of 16 high
+; Start drawing from the right side
+; Start long line with partial segment
+; After a segment, address (and mask) point to the last pixel
+; (i.e. the last instruction of a segment is typically "or.w d0,(a0)"
+; The beginning of a full segment updates the address.
+; The various computations must go from the outer corners of the pixels
+; (in the general direction of the line)
+
+draw_fast_line:
+	move.l	back_buffer,a0
+
+; This computes the address of the first pixel
+	adda.w	#162,a0
+	moveq.l	#1,d0
+; There's magic here, jump in the middle of the segment
+	adda.w	#160*15-8,a0
+	bsr.s	draw_vseg_d_8_0_0
+
+	bsr.s	draw_vseg_d_8_8
+	bsr.s	draw_vseg_d_8_0
+	bsr.s	draw_vseg_d_8_8
+	bsr.s	draw_vseg_d_8_0
+	bsr.s	draw_vseg_d_8_8
+	bsr.s	draw_vseg_d_8_0
+	bsr.s	draw_vseg_d_8_8
+	bsr.s	draw_vseg_d_8_0
+	bsr.s	draw_vseg_d_8_8
+	bsr.s	draw_vseg_d_8_0
+	bsr.s	draw_vseg_d_8_8
+	rts
+
+; This segment is moves down when moving left
+; This segment moves left by 8 pixels over its entire length
+; This segment assumes that the previous pixel was at offset 0
+draw_vseg_d_8_0:
+	adda.w	#160*16-8,a0
+	moveq.l	#1,d0
+
+; Jump before drawing pixel #0
+draw_vseg_d_8_0_0:
+	or.w	d0,-15*160(a0)
+; Jump before drawing pixel #1
+draw_vseg_d_8_0_1:
+	or.w	d0,-14*160(a0)
+	add.w	d0,d0
+	or.w	d0,-13*160(a0)
+	or.w	d0,-12*160(a0)
+	add.w	d0,d0
+	or.w	d0,-11*160(a0)
+	or.w	d0,-10*160(a0)
+	add.w	d0,d0
+	or.w	d0,-9*160(a0)
+	or.w	d0,-8*160(a0)
+	add.w	d0,d0
+	or.w	d0,-7*160(a0)
+	or.w	d0,-6*160(a0)
+	add.w	d0,d0
+	or.w	d0,-5*160(a0)
+	or.w	d0,-4*160(a0)
+	add.w	d0,d0
+	or.w	d0,-3*160(a0)
+	or.w	d0,-2*160(a0)
+	add.w	d0,d0
+	or.w	d0,-1*160(a0)
+draw_vseg_d_8_0_15a:
+draw_vseg_d_8_0_16b:
+	or.w	d0,(a0)
+	rts
+
+draw_vseg_d_8_8:
+	adda.w	#160*16,a0
+	add.w	d0,d0
+	or.w	d0,-15*160(a0)
+	or.w	d0,-14*160(a0)
+	add.w	d0,d0
+	or.w	d0,-13*160(a0)
+	or.w	d0,-12*160(a0)
+	add.w	d0,d0
+	or.w	d0,-11*160(a0)
+	or.w	d0,-10*160(a0)
+	add.w	d0,d0
+	or.w	d0,-9*160(a0)
+	or.w	d0,-8*160(a0)
+	add.w	d0,d0
+	or.w	d0,-7*160(a0)
+	or.w	d0,-6*160(a0)
+	add.w	d0,d0
+	or.w	d0,-5*160(a0)
+	or.w	d0,-4*160(a0)
+	add.w	d0,d0
+	or.w	d0,-3*160(a0)
+	or.w	d0,-2*160(a0)
+	add.w	d0,d0
+	or.w	d0,-1*160(a0)
+	or.w	d0,(a0)
 	rts
 
 
