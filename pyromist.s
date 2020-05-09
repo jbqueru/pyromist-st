@@ -110,6 +110,56 @@ soup2:
 	move #$2300,sr
 
 main_loop:
+	move.l	back_buffer,a1
+	addq.l	#2,a1
+	clr.w	d0
+	moveq	#99,d1
+clear_screen:
+	move.w	d0,(a1)
+	move.w	d0,8(a1)
+	move.w	d0,16(a1)
+	move.w	d0,24(a1)
+	move.w	d0,32(a1)
+	move.w	d0,40(a1)
+	move.w	d0,48(a1)
+	move.w	d0,56(a1)
+	move.w	d0,64(a1)
+	move.w	d0,72(a1)
+	move.w	d0,80(a1)
+	move.w	d0,88(a1)
+	move.w	d0,96(a1)
+	move.w	d0,104(a1)
+	move.w	d0,112(a1)
+	move.w	d0,120(a1)
+	move.w	d0,128(a1)
+	move.w	d0,136(a1)
+	move.w	d0,144(a1)
+	move.w	d0,152(a1)
+
+	move.w	d0,160(a1)
+	move.w	d0,160+8(a1)
+	move.w	d0,160+16(a1)
+	move.w	d0,160+24(a1)
+	move.w	d0,160+32(a1)
+	move.w	d0,160+40(a1)
+	move.w	d0,160+48(a1)
+	move.w	d0,160+56(a1)
+	move.w	d0,160+64(a1)
+	move.w	d0,160+72(a1)
+	move.w	d0,160+80(a1)
+	move.w	d0,160+88(a1)
+	move.w	d0,160+96(a1)
+	move.w	d0,160+104(a1)
+	move.w	d0,160+112(a1)
+	move.w	d0,160+120(a1)
+	move.w	d0,160+128(a1)
+	move.w	d0,160+136(a1)
+	move.w	d0,160+144(a1)
+	move.w	d0,160+152(a1)
+	add.w	#320,a1
+	dbra	d1,clear_screen
+
+
 	lea.l	scroller_text,a0
 	add.w	text_position,a0
 	move.l	back_buffer,a1
@@ -154,11 +204,34 @@ main_loop:
 	clr.w	text_position
 .done_scroll:
 
-	move.w	#0,d0	; x1
-	move.w	#0,d1	; y1
-	move.w	#319,d2	; x2
-	move.w	#199,d3 ; y2
+	move.w	#160,d0	; x1
+	move.w	#100,d1	; y1
+	move.w	line_end_x,d2	; x2
+	move.w	line_end_y,d3	; y2
 	bsr	draw_line
+
+	cmp.w	#0,line_end_x
+	beq.s	.left_side
+	cmp.w	#199,line_end_y
+	beq.s	.bottom_side
+	cmp.w	#319,line_end_x
+	beq.s	.right_side
+	bra.s	.top_side
+.left_side:
+	cmp.w	#0,line_end_y
+	beq.s	.top_side
+	subq.w	#1,line_end_y
+	bra.s	.line_moved
+.bottom_side:
+	subq.w	#1,line_end_x
+	bra.s	.line_moved
+.right_side:
+	addq.w	#1,line_end_y
+	bra.s	.line_moved
+.top_side:
+	addq.w	#1,line_end_x
+.line_moved:
+
 
 ; Swap framebuffers
 	move.l	back_buffer,d0
@@ -404,6 +477,11 @@ raster_color:
 text_position:
 	ds.w	1
 text_sub_position:
+	ds.w	1
+
+line_end_x:
+	ds.w	1
+line_end_y:
 	ds.w	1
 
 save_sr:
