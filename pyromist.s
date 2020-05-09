@@ -638,6 +638,6 @@ stack_bottom:
 stack_top:
 
 raw_fb:
-	ds.b	32000+32000+255
+	ds.b	32000*9+255
 
 end_bss:
