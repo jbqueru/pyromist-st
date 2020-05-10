@@ -234,6 +234,71 @@ clear_screen:
 	addq.w	#1,line_end_x
 .line_moved:
 
+	movea.l	#sin_table_1024_32768,a0
+	move.w	square_rotation,d4
+	addi.w	#256,d4
+	andi.w	#1023,d4
+	add.w	d4,d4
+	moveq	#96,d0
+	muls	(a0,d4),d0
+	add.l	d0,d0
+	swap	d0
+	move.w	d0,square_cos
+
+	move.w	square_rotation,d4
+	add.w	d4,d4
+	moveq	#96,d1
+	muls	(a0,d4),d1
+	add.l	d1,d1
+	swap	d1
+	move.w	d1,square_sin
+
+
+	move.w	#160,d2
+	move.w	#100,d3
+	move.w	d2,d0
+	move.w	d3,d1
+	add.w	square_cos,d0
+	sub.w	square_sin,d1
+	add.w	square_sin,d2
+	add.w	square_cos,d3
+	bsr	draw_line
+
+	move.w	#160,d2
+	move.w	#100,d3
+	move.w	d2,d0
+	move.w	d3,d1
+	add.w	square_sin,d2
+	add.w	square_cos,d3
+	sub.w	square_cos,d0
+	add.w	square_sin,d1
+	bsr	draw_line
+
+	move.w	#160,d2
+	move.w	#100,d3
+	move.w	d2,d0
+	move.w	d3,d1
+	sub.w	square_cos,d0
+	add.w	square_sin,d1
+	sub.w	square_sin,d2
+	sub.w	square_cos,d3
+	bsr	draw_line
+
+	move.w	#160,d2
+	move.w	#100,d3
+	move.w	d2,d0
+	move.w	d3,d1
+	sub.w	square_sin,d2
+	sub.w	square_cos,d3
+	add.w	square_cos,d0
+	sub.w	square_sin,d1
+	bsr	draw_line
+
+
+	move.w	square_rotation,d0
+	addq.w	#7,d0
+	and.w	#1023,d0
+	move.w	d0,square_rotation
 
 ; Swap framebuffers
 	move.l	back_buffer,d0
@@ -243,6 +308,12 @@ clear_screen:
 	move.b	d0,$ffff8203.w
 	swap.w	d0
 	move.b	d0,$ffff8201.w
+
+	move.w	#$777,$ffff8240.w
+	.rept	124
+	nop
+	.endr
+	move.w	#0,$ffff8240.w
 
 ; Wait for next VBL
 	clr.b	vbl_reached
@@ -569,6 +640,8 @@ font:
 	dc.w	%0000001111000000
 	dc.w	%0000000000000000
 
+	.include "sin_table_1024_32768.s"
+
 scroller_text:
 	dc.b	"              "
 	dc.b	"! ! !   !!! !!! !!!   ! ! !"
@@ -601,6 +674,13 @@ text_sub_position:
 line_end_x:
 	ds.w	1
 line_end_y:
+	ds.w	1
+
+square_rotation:
+	ds.w	1
+square_cos:
+	ds.w	1
+square_sin:
 	ds.w	1
 
 save_sr:
