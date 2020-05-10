@@ -205,6 +205,7 @@ clear_screen:
 .done_scroll:
 
 	bsr	draw_fast_line
+	bsr	draw_faster_line
 
 	move.w	#160,d0	; x1
 	move.w	#100,d1	; y1
@@ -599,6 +600,87 @@ draw_vseg_d_8_8:
 	or.w	d0,(a0)
 	rts
 
+; A highly optimized approach to drawing lines.
+
+; Compared to traditional approaches, this eliminates the need to shift
+; a bit to match pixel locations, by using all 8 data registers to
+; match the 8 bit positions in a byte.
+
+; Each segment
+
+draw_faster_line:
+	move.l	back_buffer,a0
+
+; This computes the address of the first pixel
+	add.w	#10,a0
+
+	moveq.l	#%10000000,d0
+	moveq.l	#%01000000,d1
+	moveq.l	#%00100000,d2
+	moveq.l	#%00010000,d3
+	moveq.l	#%00001000,d4
+	moveq.l	#%00000100,d5
+	moveq.l	#%00000010,d6
+	moveq.l	#%00000001,d7
+
+; There's magic here, jump in the middle of the segment
+	adda.w	#160*15,a0
+	bsr.s	draw_vf_d_8_0_16
+
+	bsr.s	draw_vf_d_8_8
+	bsr.s	draw_vf_d_8_0
+	bsr.s	draw_vf_d_8_8
+
+	rts
+
+;	jsr	draw_vf_d_8_0		; 3 words, 5 nops
+draw_vf_d_8_0:
+	adda.w	#160*16+8,a0		; 2 words, 3 nops
+draw_vf_d_8_0_16:
+	or.b	d0,-15*160(a0)		; 2 words, 4 nops
+	or.b	d0,-14*160(a0)		; 2 words, 4 nops
+	or.b	d1,-13*160(a0)		; 2 words, 4 nops
+	or.b	d1,-12*160(a0)		; 2 words, 4 nops
+	or.b	d2,-11*160(a0)		; 2 words, 4 nops
+	or.b	d2,-10*160(a0)		; 2 words, 4 nops
+	or.b	d3,-9*160(a0)		; 2 words, 4 nops
+	or.b	d3,-8*160(a0)		; 2 words, 4 nops
+	or.b	d4,-7*160(a0)		; 2 words, 4 nops
+	or.b	d4,-6*160(a0)		; 2 words, 4 nops
+	or.b	d5,-5*160(a0)		; 2 words, 4 nops
+	or.b	d5,-4*160(a0)		; 2 words, 4 nops
+	or.b	d6,-3*160(a0)		; 2 words, 4 nops
+	or.b	d6,-2*160(a0)		; 2 words, 4 nops
+	or.b	d7,-1*160(a0)		; 2 words, 4 nops
+	or.b	d7,(a0)			; 1 word, 3 nops
+	rts				; 1 word, 4 nops
+
+; 2 + 15*2 + 1 + 1 = 34 words
+; 5 + 3 + 15*4 + 3 + 4 = 75 nops
+
+;	jsr	draw_vf_d_8_8		; 3 words, 5 nops
+draw_vf_d_8_8:
+	adda.w	#160*16,a0		; 2 words, 3 nops
+	or.b	d0,-15*160+1(a0)	; 2 words, 4 nops
+	or.b	d0,-14*160+1(a0)	; 2 words, 4 nops
+	or.b	d1,-13*160+1(a0)	; 2 words, 4 nops
+	or.b	d1,-12*160+1(a0)	; 2 words, 4 nops
+	or.b	d2,-11*160+1(a0)	; 2 words, 4 nops
+	or.b	d2,-10*160+1(a0)	; 2 words, 4 nops
+	or.b	d3,-9*160+1(a0)		; 2 words, 4 nops
+	or.b	d3,-8*160+1(a0)		; 2 words, 4 nops
+	or.b	d4,-7*160+1(a0)		; 2 words, 4 nops
+	or.b	d4,-6*160+1(a0)		; 2 words, 4 nops
+	or.b	d5,-5*160+1(a0)		; 2 words, 4 nops
+	or.b	d5,-4*160+1(a0)		; 2 words, 4 nops
+	or.b	d6,-3*160+1(a0)		; 2 words, 4 nops
+	or.b	d6,-2*160+1(a0)		; 2 words, 4 nops
+	or.b	d7,-1*160+1(a0)		; 2 words, 4 nops
+	or.b	d7,1(a0)		; 2 words, 4 nops
+	rts
+
+; 2 + 16*2 + 1 = 35 words
+; 5 + 3 + 16*4 + 4 = 76 nops
 
 ; Initialized data
 	.data
