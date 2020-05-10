@@ -204,8 +204,17 @@ clear_screen:
 	clr.w	text_position
 .done_scroll:
 
+	move.w	#240,d0
+	move.w	#100,d1
+	move.w	#240+36,d2
+	move.w	#100+72,d3
 	bsr	draw_fast_line
-	bsr	draw_faster_line
+
+	move.w	#240,d0
+	move.w	#100,d1
+	move.w	#240+36,d2
+	move.w	#100-72,d3
+	bsr	draw_fast_line
 
 	move.w	#160,d0	; x1
 	move.w	#100,d1	; y1
@@ -384,9 +393,11 @@ hbl:
 	move.w	raster_color,$ffff8240.w
 	rte
 
-; ******************************
-; * Basic line-drawing routine *
-; ******************************
+; **********************************
+; **********************************
+; *** BASIC LINE-DRAWING ROUTINE ***
+; **********************************
+; **********************************
 ;
 ; This is a straightforward implementation of Bresenham.
 ;
@@ -489,126 +500,11 @@ draw_d_line:
 	dbra	d3,.draw_d_pixel
 	rts
 
-; Skeleton for fast line drawing (by segments) for vertical-ish lines
-
-; It's faster to draw lines right to left when drawing one pixel at a time.
-
-; When running a partial routine, it's easier to execute only the end
-; (by jumping in the middle of the code) than only the begninning
-; (because that requires patching the code then fixing the patch).
-
-; As a consequence, it's easier to anchor on the address at the end of the
-; segment, because that way it's always pointing to a pixel drawn in that
-; segment even when drawing a partial segment.
-
-; If the segments are less than 17 pixels wide, they all fit within 2 pixel
-; blocks, so that there's only 1 address change in the middle of the block.
-; If the starting pixel was already drawn by the previous segment, that only
-; allows 16 pixels of width, and from there 16 pixels of height at 45 degrees.
-; 16 high is convenient for multiplications (when computing or processing
-; the slope.
-
-; Segments of 16 high
-; Start drawing from the right side
-; Start long line with partial segment
-; After a segment, address (and mask) point to the last pixel
-; (i.e. the last instruction of a segment is typically "or.w d0,(a0)"
-; The beginning of a full segment updates the address.
-; The various computations must go from the outer corners of the pixels
-; (in the general direction of the line)
-
-draw_fast_line:
-	move.l	back_buffer,a0
-
-; This computes the address of the first pixel
-	adda.w	#162,a0
-	moveq.l	#1,d0
-; There's magic here, jump in the middle of the segment
-	adda.w	#160*15-8,a0
-	bsr.s	draw_vseg_d_8_0_0
-
-	bsr.s	draw_vseg_d_8_8
-	bsr.s	draw_vseg_d_8_0
-	bsr.s	draw_vseg_d_8_8
-	bsr.s	draw_vseg_d_8_0
-	bsr.s	draw_vseg_d_8_8
-	bsr.s	draw_vseg_d_8_0
-	bsr.s	draw_vseg_d_8_8
-	bsr.s	draw_vseg_d_8_0
-	bsr.s	draw_vseg_d_8_8
-	bsr.s	draw_vseg_d_8_0
-	bsr.s	draw_vseg_d_8_8
-	rts
-
-; This segment is moves down when moving left
-; This segment moves left by 8 pixels over its entire length
-; This segment assumes that the previous pixel was at offset 0
-draw_vseg_d_8_0:
-	adda.w	#160*16-8,a0
-	moveq.l	#1,d0
-
-; Jump before drawing pixel #0
-draw_vseg_d_8_0_0:
-	or.w	d0,-15*160(a0)
-; Jump before drawing pixel #1
-draw_vseg_d_8_0_1:
-	or.w	d0,-14*160(a0)
-	add.w	d0,d0
-	or.w	d0,-13*160(a0)
-	or.w	d0,-12*160(a0)
-	add.w	d0,d0
-	or.w	d0,-11*160(a0)
-	or.w	d0,-10*160(a0)
-	add.w	d0,d0
-	or.w	d0,-9*160(a0)
-	or.w	d0,-8*160(a0)
-	add.w	d0,d0
-	or.w	d0,-7*160(a0)
-	or.w	d0,-6*160(a0)
-	add.w	d0,d0
-	or.w	d0,-5*160(a0)
-	or.w	d0,-4*160(a0)
-	add.w	d0,d0
-	or.w	d0,-3*160(a0)
-	or.w	d0,-2*160(a0)
-	add.w	d0,d0
-	or.w	d0,-1*160(a0)
-draw_vseg_d_8_0_15a:
-draw_vseg_d_8_0_16b:
-	or.w	d0,(a0)
-	rts
-
-draw_vseg_d_8_8:
-	adda.w	#160*16,a0
-	add.w	d0,d0
-	or.w	d0,-15*160(a0)
-	or.w	d0,-14*160(a0)
-	add.w	d0,d0
-	or.w	d0,-13*160(a0)
-	or.w	d0,-12*160(a0)
-	add.w	d0,d0
-	or.w	d0,-11*160(a0)
-	or.w	d0,-10*160(a0)
-	add.w	d0,d0
-	or.w	d0,-9*160(a0)
-	or.w	d0,-8*160(a0)
-	add.w	d0,d0
-	or.w	d0,-7*160(a0)
-	or.w	d0,-6*160(a0)
-	add.w	d0,d0
-	or.w	d0,-5*160(a0)
-	or.w	d0,-4*160(a0)
-	add.w	d0,d0
-	or.w	d0,-3*160(a0)
-	or.w	d0,-2*160(a0)
-	add.w	d0,d0
-	or.w	d0,-1*160(a0)
-	or.w	d0,(a0)
-	rts
-
-; **********************************
-; * Optimized line-drawing routine *
-; **********************************
+; **************************************
+; **************************************
+; *** OPTIMIZED LINE-DRAWING ROUTINE ***
+; **************************************
+; **************************************
 ;
 ; This is a modified Bresenham algorithm, which moves by 16 pixels at a time.
 ;
@@ -638,51 +534,130 @@ draw_vseg_d_8_8:
 ; d0,d1: (x1,y1), coordinates of one end of the line
 ; d2,d3: (x2,y2), coordinates of the other end of the line
 ; a0: base address of the framebuffer
+;
+; Registers modified: All
 
-; registers modified: All
+draw_fast_line:
 
-draw_faster_line:
 ; Determine absolute value of dx and dy to compute overall direction
-
 	move.w	d0,d4
 	sub.w	d2,d4
-	beq.s	faster_vertical ; d0=d2, x1=x2, vertical line (or single)
+	beq.s	fast_vertical ; d0=d2, x1=x2, vertical line (or single)
 	bpl.s	.positive_dx
 	neg.w	d4
 .positive_dx: ; from this point d4 is abs(x1-x2)
 	move.w	d1,d5
-	sub.w	d2,d5
-	beq.s	faster_horizontal ; d1=d3, y1=y2, horizontal line
+	sub.w	d3,d5
+	beq.s	fast_horizontal ; d1=d3, y1=y2, horizontal line
 	bpl.s	.positive_dy
 	neg.w	d5
 .positive_dy: ; from this point d5 is abs(y1-y2)
 	cmp.w	d4,d5
-	beq.s	faster_diagonal ; abs(y1-y2)=abs(x1-x2), diagonal line
-	bge.s	faster_vertical_ish ; d5>=d4, abs(y1-y2)>=abs(x1-x2)
-	bra.s	faster_horizontal_ish
-
-	nop	; TODO: Remove
+	beq.s	fast_diagonal ; abs(y1-y2)=abs(x1-x2), diagonal line
+	bge.s	fast_vertical_ish ; d5>=d4, abs(y1-y2)>=abs(x1-x2)
+	bra.s	fast_horizontal_ish
 
 ; Draw vertical line
-faster_vertical:
-;	rts
+fast_vertical:
+	rts
 ; Draw horizonal line
-faster_horizontal:
-;	rts
+fast_horizontal:
+	rts
 ; Draw diagonal line
-faster_diagonal:
-;	rts
+fast_diagonal:
+	rts
 ; Draw horizonal_ish line
-faster_horizontal_ish:
-;	rts
-; Draw vertical_ish line
-faster_vertical_ish:
-;	rts
+fast_horizontal_ish:
+	rts
 
-	move.l	back_buffer,a0
+; **************************
+; * Draw vertical-ish line *
+; **************************
+;
+; Lines are drawn top-to-bottom, in segments of 16. The segments to be
+; drawn are determined in opposite order, starting at the bottom.
+;
+; The code to draw all possible segments is pre-generated.
+;
+; The algorithm obviously requires to draw partial segments. It is easier to
+; draw the end of a segment than the beginning: the former can be achieved
+; by jumping into the middle of the code, while the latter would require to
+; patch the code in place.
+;
+; Executing the code for all segments is achieved by pushing the addresses
+; of all the segments (in reverse order) on the stack. Using "rts" takes
+; care at the same time of fetching the target address, jumping to it, and
+; pointing to the following address, without having to worry about the end
+; of the chain which is handled as the counterpart of a traditional jsr.
+;
+; When drawing a segment, the address register points to the last pixel to
+; be drawn. This allows to adjust the address within the segment, without
+; having to know the address of the first pixel of the next segment.
+;
+; The code works with positive numbers. Lines that are drawn along the
+; second diagonal are essentially handled by symmetry. This results in
+; minor duplication of code for vertical segments, but the separation is
+; advantageous as it makes each set of generated code smaller than 32kB,
+; which is cleaner to address with straight 16-bit offsets.
+;
+; Parameters: Same as overall fast line routine, with the constraint
+; that abs(y1-y2)>abs(x1-x2).
+;
+; Registers modified: All
 
-; This computes the address of the first pixel
-	add.w	#10,a0
+fast_vertical_ish:
+	cmp.w	d1,d3
+	ble.s	.ends_ordered	; d3<=d1
+	exg	d0,d2
+	exg	d1,d3
+.ends_ordered:	; from this point the ends are in order, d1>=d3.
+	move.w	d1,d5
+	sub.w	d3,d5	; d5 is delta-y, guaranteed to be positive
+	move.w	d2,d4
+	sub.w	d0,d4	; d4 is delta-x
+	bpl.s	.positive_slope
+	neg.w	d4	; TODO: remember that we're drawing in the other direction
+.positive_slope:	; d4 and d5 are positive delta-x and delta-y
+	swap.w	d4
+	clr.w	d4
+	divu.w	d5,d4	; TODO: don't compute the slope for small lines
+	swap.w	d4
+	clr.w	d4
+	swap.w	d4
+	lsl.l	#4,d4	; d4 is the Bresenham step for 16 pixels, stored as
+			; 16:16, with 12 significant fractional bits
+
+; At the end, need to figure out the coordinates of the last point of
+; the first (partial) segment, and need to figure out the size of that
+; segment.
+
+; The coordinates of the last point of the line aren't important to keep.
+; The x value of the last point of the segment to process is important.
+; Chances are, it's in the upper bits of the Bresenham accumulator.
+
+; How to best determine how many lines to draw?
+; d5 is delta-y, easy to decrement by 16 and test for small numbers
+
+.next_segment:
+	cmp.w	#16,d5 ; getting close to the end of the line?
+	blt.s	.last_segment
+	sub.w	#16,d5
+	pea	draw_vf_d_8_8 ; TODO: find which segment to use
+	bra.s	.next_segment
+.last_segment:
+	add.w	d5,d3
+	mulu.w	#160,d3
+	movea.l	back_buffer,a0	; TODO: get as parameter
+	andi.w	#$fff0,d2	; TODO: d2 is NOT the proper x coordinate
+	lsr.w	d2
+	add.w	d2,d3
+	addq.w	#2,d3		; TODO: remove once address is a parameter
+	adda.w	d3,a0
+
+	add.w	d5,d5
+	add.w	d5,d5
+	movea.l	#draw_vf_d_8_8+64,a1
+	suba.w	d5,a1
 
 	moveq.l	#%10000000,d0
 	moveq.l	#%01000000,d1
@@ -693,20 +668,11 @@ faster_vertical_ish:
 	moveq.l	#%00000010,d6
 	moveq.l	#%00000001,d7
 
-; There's magic here, jump in the middle of the segment
-	adda.w	#160*15,a0
-	bsr.s	draw_vf_d_8_0_16
-
-	bsr.s	draw_vf_d_8_8
-	bsr.s	draw_vf_d_8_0
-	bsr.s	draw_vf_d_8_8
-
-	rts
+	jmp	(a1) ; TODO: find which segment to use
 
 ;	jsr	draw_vf_d_8_0		; 3 words, 5 nops
 draw_vf_d_8_0:
 	adda.w	#160*16+8,a0		; 2 words, 3 nops
-draw_vf_d_8_0_16:
 	or.b	d0,-15*160(a0)		; 2 words, 4 nops
 	or.b	d0,-14*160(a0)		; 2 words, 4 nops
 	or.b	d1,-13*160(a0)		; 2 words, 4 nops
@@ -869,7 +835,8 @@ stack_bottom:
 	ds.b	512
 stack_top:
 
+	.even
 raw_fb:
-	ds.b	32000*9+255
+	ds.b	32000*9+254
 
 end_bss:
