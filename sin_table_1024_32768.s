@@ -12,6 +12,8 @@
 ;   See the License for the specific language governing permissions and
 ;   limitations under the License.
 
+; This file is generated, do not modify. See gen_sin.c
+
 sin_table_1024_32768:
 	dc.w 0,201,402,603,804,1005,1206,1406
 	dc.w 1607,1808,2009,2209,2410,2610,2811,3011

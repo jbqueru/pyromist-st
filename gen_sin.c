@@ -33,6 +33,8 @@ int main() {
 		";   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n"
 		";   See the License for the specific language governing permissions and\n"
 		";   limitations under the License.\n"
+		"\n"
+		"; This file is generated, do not modify. See gen_sin.c\n"
 		"\n");
 	printf("sin_table_1024_32768:\n\tdc.w ");
 	for (i=0;i<1024;i++) {
