@@ -97,7 +97,7 @@ soup2:
 	move.l	#hbl,$120.w
 
 ; Set up our framebuffers
-	move.l	#raw_fb+255,d0
+	move.l	#raw_buffer+255,d0
 	clr.b	d0
 	move.l	d0,back_buffer
 	add.l	#32000,d0
@@ -606,6 +606,146 @@ fast_horizontal_ish:
 ; Registers modified: All
 
 fast_vertical_ish:
+	lea.l	df_lcode,a2
+
+	move.w	#%1101000011111100,(a2)+	; ADDA.w #<data>,A0
+		; ^^^^                  ADD/ADDA
+		;     ^^^               A0
+		;        ^^^            .w
+		;           ^^^^^^      #<data>
+	move.w	#160*16,(a2)+			; <data>
+
+	move.w	#%1000000100101000,(a2)+	; OR.b D0,d16(A0)
+		; ^^^^                  OR
+		;     ^^^               D0
+		;        ^^^            .b Dn,<ea>
+		;           ^^^         d16(An)
+		;              ^^^      A0
+	move.w	#-15*160,(a2)+			; d16
+
+	move.w	#%1000000100101000,(a2)+	; OR.b D0,d16(A0)
+		; ^^^^                  OR
+		;     ^^^               D0
+		;        ^^^            .b Dn,<ea>
+		;           ^^^         d16(An)
+		;              ^^^      A0
+	move.w	#-14*160,(a2)+			; d16
+
+	move.w	#%1000000100101000,(a2)+	; OR.b D0,d16(A0)
+		; ^^^^                  OR
+		;     ^^^               D0
+		;        ^^^            .b Dn,<ea>
+		;           ^^^         d16(An)
+		;              ^^^      A0
+	move.w	#-13*160,(a2)+			; d16
+
+	move.w	#%1000000100101000,(a2)+	; OR.b D0,d16(A0)
+		; ^^^^                  OR
+		;     ^^^               D0
+		;        ^^^            .b Dn,<ea>
+		;           ^^^         d16(An)
+		;              ^^^      A0
+	move.w	#-12*160,(a2)+			; d16
+
+	move.w	#%1000000100101000,(a2)+	; OR.b D0,d16(A0)
+		; ^^^^                  OR
+		;     ^^^               D0
+		;        ^^^            .b Dn,<ea>
+		;           ^^^         d16(An)
+		;              ^^^      A0
+	move.w	#-11*160,(a2)+			; d16
+
+	move.w	#%1000000100101000,(a2)+	; OR.b D0,d16(A0)
+		; ^^^^                  OR
+		;     ^^^               D0
+		;        ^^^            .b Dn,<ea>
+		;           ^^^         d16(An)
+		;              ^^^      A0
+	move.w	#-10*160,(a2)+			; d16
+
+	move.w	#%1000000100101000,(a2)+	; OR.b D0,d16(A0)
+		; ^^^^                  OR
+		;     ^^^               D0
+		;        ^^^            .b Dn,<ea>
+		;           ^^^         d16(An)
+		;              ^^^      A0
+	move.w	#-9*160,(a2)+			; d16
+
+	move.w	#%1000000100101000,(a2)+	; OR.b D0,d16(A0)
+		; ^^^^                  OR
+		;     ^^^               D0
+		;        ^^^            .b Dn,<ea>
+		;           ^^^         d16(An)
+		;              ^^^      A0
+	move.w	#-8*160,(a2)+			; d16
+
+	move.w	#%1000000100101000,(a2)+	; OR.b D0,d16(A0)
+		; ^^^^                  OR
+		;     ^^^               D0
+		;        ^^^            .b Dn,<ea>
+		;           ^^^         d16(An)
+		;              ^^^      A0
+	move.w	#-7*160,(a2)+			; d16
+
+	move.w	#%1000000100101000,(a2)+	; OR.b D0,d16(A0)
+		; ^^^^                  OR
+		;     ^^^               D0
+		;        ^^^            .b Dn,<ea>
+		;           ^^^         d16(An)
+		;              ^^^      A0
+	move.w	#-6*160,(a2)+			; d16
+
+	move.w	#%1000000100101000,(a2)+	; OR.b D0,d16(A0)
+		; ^^^^                  OR
+		;     ^^^               D0
+		;        ^^^            .b Dn,<ea>
+		;           ^^^         d16(An)
+		;              ^^^      A0
+	move.w	#-5*160,(a2)+			; d16
+
+	move.w	#%1000000100101000,(a2)+	; OR.b D0,d16(A0)
+		; ^^^^                  OR
+		;     ^^^               D0
+		;        ^^^            .b Dn,<ea>
+		;           ^^^         d16(An)
+		;              ^^^      A0
+	move.w	#-4*160,(a2)+			; d16
+
+	move.w	#%1000000100101000,(a2)+	; OR.b D0,d16(A0)
+		; ^^^^                  OR
+		;     ^^^               D0
+		;        ^^^            .b Dn,<ea>
+		;           ^^^         d16(An)
+		;              ^^^      A0
+	move.w	#-3*160,(a2)+			; d16
+
+	move.w	#%1000000100101000,(a2)+	; OR.b D0,d16(A0)
+		; ^^^^                  OR
+		;     ^^^               D0
+		;        ^^^            .b Dn,<ea>
+		;           ^^^         d16(An)
+		;              ^^^      A0
+	move.w	#-2*160,(a2)+			; d16
+
+	move.w	#%1000000100101000,(a2)+	; OR.b D0,d16(A0)
+		; ^^^^                  OR
+		;     ^^^               D0
+		;        ^^^            .b Dn,<ea>
+		;           ^^^         d16(An)
+		;              ^^^      A0
+	move.w	#-1*160,(a2)+			; d16
+
+	move.w	#%1000000100101000,(a2)+	; OR.b D0,d16(A0)
+		; ^^^^                  OR
+		;     ^^^               D0
+		;        ^^^            .b Dn,<ea>
+		;           ^^^         d16(An)
+		;              ^^^      A0
+	move.w	#0,(a2)+			; d16
+
+	move.w	#%0100111001110101,(a2)+	; RTS
+		; ^^^^^^^^^^^^^^^^	RTS
+
 	cmp.w	d1,d3
 	ble.s	.ends_ordered	; d3<=d1
 	exg	d0,d2
@@ -642,7 +782,7 @@ fast_vertical_ish:
 	cmp.w	#16,d5 ; getting close to the end of the line?
 	blt.s	.last_segment
 	sub.w	#16,d5
-	pea	draw_vf_d_8_8 ; TODO: find which segment to use
+	pea	df_lcode ; TODO: find which segment to use
 	bra.s	.next_segment
 .last_segment:
 	add.w	d5,d3
@@ -656,7 +796,7 @@ fast_vertical_ish:
 
 	add.w	d5,d5
 	add.w	d5,d5
-	movea.l	#draw_vf_d_8_8+64,a1
+	lea.l	df_lcode+64,a1
 	suba.w	d5,a1
 
 	moveq.l	#%10000000,d0
@@ -669,54 +809,6 @@ fast_vertical_ish:
 	moveq.l	#%00000001,d7
 
 	jmp	(a1) ; TODO: find which segment to use
-
-;	jsr	draw_vf_d_8_0		; 3 words, 5 nops
-draw_vf_d_8_0:
-	adda.w	#160*16+8,a0		; 2 words, 3 nops
-	or.b	d0,-15*160(a0)		; 2 words, 4 nops
-	or.b	d0,-14*160(a0)		; 2 words, 4 nops
-	or.b	d1,-13*160(a0)		; 2 words, 4 nops
-	or.b	d1,-12*160(a0)		; 2 words, 4 nops
-	or.b	d2,-11*160(a0)		; 2 words, 4 nops
-	or.b	d2,-10*160(a0)		; 2 words, 4 nops
-	or.b	d3,-9*160(a0)		; 2 words, 4 nops
-	or.b	d3,-8*160(a0)		; 2 words, 4 nops
-	or.b	d4,-7*160(a0)		; 2 words, 4 nops
-	or.b	d4,-6*160(a0)		; 2 words, 4 nops
-	or.b	d5,-5*160(a0)		; 2 words, 4 nops
-	or.b	d5,-4*160(a0)		; 2 words, 4 nops
-	or.b	d6,-3*160(a0)		; 2 words, 4 nops
-	or.b	d6,-2*160(a0)		; 2 words, 4 nops
-	or.b	d7,-1*160(a0)		; 2 words, 4 nops
-	or.b	d7,(a0)			; 1 word, 3 nops
-	rts				; 1 word, 4 nops
-
-; 2 + 15*2 + 1 + 1 = 34 words, 68 bytes
-; 5 + 3 + 15*4 + 3 + 4 = 75 nops
-
-;	jsr	draw_vf_d_8_8		; 3 words, 5 nops
-draw_vf_d_8_8:
-	adda.w	#160*16,a0		; 2 words, 3 nops
-	or.b	d0,-15*160+1(a0)	; 2 words, 4 nops
-	or.b	d0,-14*160+1(a0)	; 2 words, 4 nops
-	or.b	d1,-13*160+1(a0)	; 2 words, 4 nops
-	or.b	d1,-12*160+1(a0)	; 2 words, 4 nops
-	or.b	d2,-11*160+1(a0)	; 2 words, 4 nops
-	or.b	d2,-10*160+1(a0)	; 2 words, 4 nops
-	or.b	d3,-9*160+1(a0)		; 2 words, 4 nops
-	or.b	d3,-8*160+1(a0)		; 2 words, 4 nops
-	or.b	d4,-7*160+1(a0)		; 2 words, 4 nops
-	or.b	d4,-6*160+1(a0)		; 2 words, 4 nops
-	or.b	d5,-5*160+1(a0)		; 2 words, 4 nops
-	or.b	d5,-4*160+1(a0)		; 2 words, 4 nops
-	or.b	d6,-3*160+1(a0)		; 2 words, 4 nops
-	or.b	d6,-2*160+1(a0)		; 2 words, 4 nops
-	or.b	d7,-1*160+1(a0)		; 2 words, 4 nops
-	or.b	d7,1(a0)		; 2 words, 4 nops
-	rts				; 1 word, 4 nops
-
-; 2 + 16*2 + 1 = 35 words, 70 bytes
-; 5 + 3 + 16*4 + 4 = 76 nops
 
 ; Initialized data
 	.data
@@ -836,7 +928,11 @@ stack_bottom:
 stack_top:
 
 	.even
-raw_fb:
+raw_buffer:
 	ds.b	32000*9+254
+
+dl_seg_l_w	== raw_buffer+254+32000+32000
+dl_seg_l_p	== dl_seg_l_w+1088
+df_lcode	== dl_seg_l_p+1088
 
 end_bss:
