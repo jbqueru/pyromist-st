@@ -384,13 +384,19 @@ hbl:
 	move.w	raster_color,$ffff8240.w
 	rte
 
-; Line-drawing routine
+; ******************************
+; * Basic line-drawing routine *
+; ******************************
+;
+; This is a straightforward implementation of Bresenham.
+;
+; TODO: Add comments
 draw_line:
 ; Get line coordinates in (d0,d1) and (d2,d3)
 
 ; Swap line ends if necessary so that d0 >= d2, to draw lines right-to-left
 ; Drawing right-to-left is faster, because the fastest way to shift a 16-bit
-; register by 1 is to add it to itself, but that only works to the left
+; register by 1 is to add it to itself, but that only works in one direction
 	cmp.w	d0,d2
 	ble.s	.lines_ordered ; d2 >= d0
 	exg	d0,d2
@@ -402,7 +408,7 @@ draw_line:
 	sub.w	d0,d2	; dx
 	neg.w	d2	; TODO: re-org registers to avoid this
 	sub.w	d1,d3	; dy
-; Adjust delta-y to be positive, negative values move in the other direction between lines
+; Adjust delta-y to be positive, adjust line offset accordingly
 	bge.s	.adjusted_dy ; d3 >= d1
 	neg.w	d3
 	neg.w	d4
@@ -413,13 +419,13 @@ draw_line:
 ; d4 is the address offset when changing lines.
 
 ; Compute start address and start pixel pattern
-	move.l	back_buffer,a0
+	move.l	back_buffer,a0 ; TODO: pass framebuffer address as parameter
 	mulu.w	#160,d1
 	lea.l	(a0,d1.w),a0
 	move.w	d0,d1
 	lsr.w	#1,d0
 	and.w	#248,d0
-	lea.l	2(a0,d0.w),a0
+	lea.l	2(a0,d0.w),a0 ; TODO: remove offset when address is param
 	move.w	#$8000,d5 ; pixel pattern
 	and	#15,d1
 	lsr.w	d1,d5
@@ -600,15 +606,79 @@ draw_vseg_d_8_8:
 	or.w	d0,(a0)
 	rts
 
-; A highly optimized approach to drawing lines.
+; **********************************
+; * Optimized line-drawing routine *
+; **********************************
+;
+; This is a modified Bresenham algorithm, which moves by 16 pixels at a time.
+;
+; Each unit of 16 pixels is drawn as a bitmap with a hard-coded shape,
+; with generated code for all possible bitmaps.
+;
+; Compared to traditional Bresenham, this is slightly less precise as it
+; forces every 16th pixel to align on a grid, and draw segments between those.
+;
+; It would be possible to improve precision with partial pixel alignments,
+; at the expense of memory usage.
+;
+; Segments that are mostly vertical are drawn byte-by-byte, avoiding the need
+; to shift data, by using all 8 data registers to represent the 8 possible
+; positions of a bit within a byte.
+;
+; TODO: Segments that are mostly horizontal are drawn word by word, with
+; imemdiate values.
+;
+; TODO: Evaluate whether diagonals must be handled separately, because of
+; risks of overflow in fixed-point Bresenham.
+;
+; TODO: Evaluate whether to special-case exact verticals and horizontals,
+; for speed.
+;
+; Parameters:
+; d0,d1: (x1,y1), coordinates of one end of the line
+; d2,d3: (x2,y2), coordinates of the other end of the line
+; a0: base address of the framebuffer
 
-; Compared to traditional approaches, this eliminates the need to shift
-; a bit to match pixel locations, by using all 8 data registers to
-; match the 8 bit positions in a byte.
-
-; Each segment
+; registers modified: All
 
 draw_faster_line:
+; Determine absolute value of dx and dy to compute overall direction
+
+	move.w	d0,d4
+	sub.w	d2,d4
+	beq.s	faster_vertical ; d0=d2, x1=x2, vertical line (or single)
+	bpl.s	.positive_dx
+	neg.w	d4
+.positive_dx: ; from this point d4 is abs(x1-x2)
+	move.w	d1,d5
+	sub.w	d2,d5
+	beq.s	faster_horizontal ; d1=d3, y1=y2, horizontal line
+	bpl.s	.positive_dy
+	neg.w	d5
+.positive_dy: ; from this point d5 is abs(y1-y2)
+	cmp.w	d4,d5
+	beq.s	faster_diagonal ; abs(y1-y2)=abs(x1-x2), diagonal line
+	bge.s	faster_vertical_ish ; d5>=d4, abs(y1-y2)>=abs(x1-x2)
+	bra.s	faster_horizontal_ish
+
+	nop	; TODO: Remove
+
+; Draw vertical line
+faster_vertical:
+;	rts
+; Draw horizonal line
+faster_horizontal:
+;	rts
+; Draw diagonal line
+faster_diagonal:
+;	rts
+; Draw horizonal_ish line
+faster_horizontal_ish:
+;	rts
+; Draw vertical_ish line
+faster_vertical_ish:
+;	rts
+
 	move.l	back_buffer,a0
 
 ; This computes the address of the first pixel
@@ -655,7 +725,7 @@ draw_vf_d_8_0_16:
 	or.b	d7,(a0)			; 1 word, 3 nops
 	rts				; 1 word, 4 nops
 
-; 2 + 15*2 + 1 + 1 = 34 words
+; 2 + 15*2 + 1 + 1 = 34 words, 68 bytes
 ; 5 + 3 + 15*4 + 3 + 4 = 75 nops
 
 ;	jsr	draw_vf_d_8_8		; 3 words, 5 nops
@@ -677,9 +747,9 @@ draw_vf_d_8_8:
 	or.b	d6,-2*160+1(a0)		; 2 words, 4 nops
 	or.b	d7,-1*160+1(a0)		; 2 words, 4 nops
 	or.b	d7,1(a0)		; 2 words, 4 nops
-	rts
+	rts				; 1 word, 4 nops
 
-; 2 + 16*2 + 1 = 35 words
+; 2 + 16*2 + 1 = 35 words, 70 bytes
 ; 5 + 3 + 16*4 + 4 = 76 nops
 
 ; Initialized data
