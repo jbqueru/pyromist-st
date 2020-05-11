@@ -10,7 +10,7 @@ RMAC as the assembler.
 
 My Hatari configuration:
 
-	hatari --confirm-quit no --machine st --memsize 512 --compatible yes --cpu-exact yes --spec512 512 --tos ~/develop/bin/emutos/emutos-192k-0.9.12/etos192us.img --harddrive out/
+	hatari --confirm-quit no --machine st --memsize 2048 --cpuclock 8 --compatible yes --cpu-exact yes --spec512 1 --tos ~/develop/bin/emutos/emutos-192k-0.9.12/etos192us.img --harddrive out/
 
 My RMAC configuration:
 
