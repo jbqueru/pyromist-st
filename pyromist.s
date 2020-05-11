@@ -710,44 +710,81 @@ fast_vertical_ish:
 
 	jmp	(a1) ; TODO: find which segment to use
 
+; ***********************************
+; * Generator for line-drawing code *
+; ***********************************
+
 generate_fast_line_code:
-	lea.l	df_lcode+70,a2
+	lea.l	df_lcode,a2
 
-	moveq	#0,d2
-	moveq	#15,d7
+	moveq.l	#0,d1	; x offset within word. 0 = left (MSB)
+	moveq.l	#0,d2	; address offset to address of end of line
+	moveq.l	#15,d7	; loop counter
 
-	subq.l	#2,a2
+	btst.l	#3,d1
+	bne.s	.long_loop
+	adda.w	#68,a2
+	bra.s	.loop_length_ok
+.long_loop:
+	adda.w	#70,a2
+.loop_length_ok:
 
 	move.w	#%0100111001110101,-(a2)	; RTS
-		; ^^^^^^^^^^^^^^^^	RTS
+		; ^^^^^^^^^^^^^^^^-------------- RTS
 
-	move.w	#%1000000100010000,-(a2)	; OR.b D0,(A0)
-		; ^^^^----------------- OR
-		;     ^^^-------------- D0
-		;        ^^^----------- .b Dn,<ea>
-		;           ^^^-------- (An)
-		;              ^^^----- A0
+	btst.l	#3,d1
+	bne.s	.write_or_loop
+
+	move.l	d1,d6
+	andi.w	#7,d6
+	swap	d6
+	lsr.l	#7,d6
+	or.w	#%1000000100010000,d6	; OR.b Dn,(A0)
+		; ^^^^------------------ OR
+		;     ^^^--------------- Dn
+		;        ^^^------------ .b Dn,<ea>
+		;           ^^^--------- (An)
+		;              ^^^------ A0
+	move.w	d6,-(a2)
 	bra.s	.or_written
 
 .write_or_loop:
-	move.w	d2,-(a2)			; d16
-	move.w	#%1000000100101000,-(a2)	; OR.b D0,d16(A0)
-		; ^^^^                  OR
-		;     ^^^               D0
-		;        ^^^            .b Dn,<ea>
-		;           ^^^         d16(An)
-		;              ^^^      A0
+	move.w	d2,d3
+	btst.l	#3,d1
+	beq.s	.address_adjusted
+	addq.w	#1,d3
+.address_adjusted:
+	move.w	d3,-(a2)		; d16
+
+	move.l	d1,d6
+	andi.w	#7,d6
+	swap	d6
+	lsr.l	#7,d6
+	or.w	#%1000000100101000,d6	; OR.b D0,d16(A0)
+		; ^^^^------------------ OR
+		;     ^^^--------------- D0
+		;        ^^^------------ .b Dn,<ea>
+		;           ^^^--------- d16(An)
+		;              ^^^------ A0
+	move.w	d6,-(a2)
 
 .or_written:
+	addq.w	#1,d1
+	btst.l	#4,d1
+	beq.s	.word_address_ok
+	andi.w	#15,d1
+	addq.w	#8,d2
+.word_address_ok:
 	sub	#160,d2
 	dbra	d7,.write_or_loop
 
-	move.w	#160*16,-(a2)			; <data>
+	neg.w	d2
+	move.w	d2,-(a2)			; <data>
 	move.w	#%1101000011111100,-(a2)	; ADDA.w #<data>,A0
-		; ^^^^                  ADD/ADDA
-		;     ^^^               A0
-		;        ^^^            .w
-		;           ^^^^^^      #<data>
+		; ^^^^-------------------------- ADD/ADDA
+		;     ^^^----------------------- A0
+		;        ^^^-------------------- .w
+		;           ^^^^^^-------------- #<data>
 
 	rts
 
