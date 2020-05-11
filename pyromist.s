@@ -16,6 +16,7 @@
 
 ; This is the userland bootstrap code. Invoke the actual demo code as a
 ; s(o)upervisor subroutine, and exit back to the OS when that returns
+user_start:
 	pea	soup
 	move.w	#38,-(sp)
 	trap	#14
@@ -162,6 +163,11 @@ clear_screen:
 	add.w	#320,a1
 	dbra	d1,clear_screen
 
+	move.w	#$700,$ffff8240.w
+	.rept	124
+	nop
+	.endr
+	move.w	#0,$ffff8240.w
 
 	lea.l	scroller_text,a0
 	add.w	text_position,a0
@@ -312,6 +318,32 @@ clear_screen:
 	addq.w	#7,d0
 	and.w	#1023,d0
 	move.w	d0,square_rotation
+
+	move.w	#$070,$ffff8240.w
+	.rept	124
+	nop
+	.endr
+	move.w	#0,$ffff8240.w
+
+; prototype 2D-texture-mapped polygon drawing
+
+	movea.l	#user_start,a0
+
+	movea.l	back_buffer,a1
+	adda.w	#52,a1
+
+	.rept 64
+
+	move.w	(a0)+,d0
+	andi.w	#$3c3c,d0
+	move.w	d0,(a1)
+	move.w	(a0)+,d0
+	andi.w	#$3c3c,d0
+	move.w	d0,8(a1)
+	adda.w	#20,a0
+	adda.w	#160,a1
+
+	.endr
 
 ; Swap framebuffers
 	move.l	back_buffer,d0
@@ -728,7 +760,7 @@ generate_fast_line_code:
 ; Initialized data
 	.data
 my_palette:
-	dc.w	0,$657,$741,$741,0,0,0,0,0,0,0,0,0,0,0,0
+	dc.w	0,$657,$741,$741,$275,$275,$275,$275,0,0,0,0,0,0,0,0
 
 font:
 	dc.w	%0000000000000000
@@ -839,7 +871,7 @@ vbl_reached:
 
 	.even
 stack_bottom:
-	ds.b	512
+	ds.b	1024
 stack_top:
 
 	.even
@@ -847,7 +879,7 @@ raw_buffer:
 	ds.b	32000*9+254
 
 dl_seg_l_w	== raw_buffer+254+32000+32000
-dl_seg_l_p	== dl_seg_l_w+1088
+dl_seg_l_p	== dl_seg_l_w+1088	; 1088 is 17*16*4
 df_lcode	== dl_seg_l_p+1088
 
 end_bss:
