@@ -714,10 +714,14 @@ fast_vertical_ish:
 ; * Generator for line-drawing code *
 ; ***********************************
 
+; TODO: re-organize registers
+
 generate_fast_line_code:
 	lea.l	df_lcode,a2
 
-	moveq.l	#0,d1	; x offset within word. 0 = left (MSB)
+	move.w	#%0101010101010101,d0
+	moveq.l	#3,d1	; x offset within word. 0 = left (MSB)
+	moveq.l	#-1,d5	; x increment. positive = right (top-right)
 	moveq.l	#0,d2	; address offset to address of end of line
 	moveq.l	#15,d7	; loop counter
 
@@ -769,12 +773,20 @@ generate_fast_line_code:
 	move.w	d6,-(a2)
 
 .or_written:
-	addq.w	#1,d1
+	btst.l	d7,d0
+	beq.s	.bresenham_done
+	add.w	d5,d1
+	bmi.s	.underflow
 	btst.l	#4,d1
 	beq.s	.word_address_ok
 	andi.w	#15,d1
 	addq.w	#8,d2
+	bra.s	.word_address_ok
+.underflow:
+	andi.w	#15,d1
+	subq.w	#8,d2
 .word_address_ok:
+.bresenham_done:
 	sub	#160,d2
 	dbra	d7,.write_or_loop
 
