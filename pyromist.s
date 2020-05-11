@@ -713,8 +713,6 @@ fast_vertical_ish:
 generate_fast_line_code:
 	lea.l	df_lcode,a2
 
-	move	#%0000000010000000,d0
-	moveq	#0,d1
 	move	#-150*16,d2
 	moveq	#15,d7
 
@@ -725,11 +723,8 @@ generate_fast_line_code:
 		;           ^^^^^^      #<data>
 	move.w	#160*16,(a2)+			; <data>
 
-	add.w	#60,a2
-
-
 .write_or_loop:
-	tst.w	d1
+	tst.w	d2
 	bne.s	.relative_address
 
 	move.w	#%1000000100010000,(a2)+	; OR.b D0,(A0)
@@ -746,10 +741,10 @@ generate_fast_line_code:
 		;        ^^^            .b Dn,<ea>
 		;           ^^^         d16(An)
 		;              ^^^      A0
-	move.w	d1,(a2)+			; d16
+	move.w	d2,(a2)+			; d16
 
 .or_written:
-	add	#160,d1
+	add	#160,d2
 	dbra	d7,.write_or_loop
 
 	move.w	#%0100111001110101,(a2)+	; RTS
