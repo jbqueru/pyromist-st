@@ -105,6 +105,9 @@ soup2:
 	move.b	front_buffer+1,$ffff8201.w
 	move.b	front_buffer+2,$ffff8203.w
 
+; Generate line-drawing code
+	jsr	generate_fast_line_code
+
 ; Enable interrupts
 ;	move.b	#1,$fffffa07.w
 	move #$2300,sr
@@ -393,6 +396,8 @@ hbl:
 	move.w	raster_color,$ffff8240.w
 	rte
 
+; ===========================================================================
+
 ; **********************************
 ; **********************************
 ; *** BASIC LINE-DRAWING ROUTINE ***
@@ -500,6 +505,8 @@ draw_d_line:
 	dbra	d3,.draw_d_pixel
 	rts
 
+; ===========================================================================
+
 ; **************************************
 ; **************************************
 ; *** OPTIMIZED LINE-DRAWING ROUTINE ***
@@ -606,145 +613,6 @@ fast_horizontal_ish:
 ; Registers modified: All
 
 fast_vertical_ish:
-	lea.l	df_lcode,a2
-
-	move.w	#%1101000011111100,(a2)+	; ADDA.w #<data>,A0
-		; ^^^^                  ADD/ADDA
-		;     ^^^               A0
-		;        ^^^            .w
-		;           ^^^^^^      #<data>
-	move.w	#160*16,(a2)+			; <data>
-
-	move.w	#%1000000100101000,(a2)+	; OR.b D0,d16(A0)
-		; ^^^^                  OR
-		;     ^^^               D0
-		;        ^^^            .b Dn,<ea>
-		;           ^^^         d16(An)
-		;              ^^^      A0
-	move.w	#-15*160,(a2)+			; d16
-
-	move.w	#%1000000100101000,(a2)+	; OR.b D0,d16(A0)
-		; ^^^^                  OR
-		;     ^^^               D0
-		;        ^^^            .b Dn,<ea>
-		;           ^^^         d16(An)
-		;              ^^^      A0
-	move.w	#-14*160,(a2)+			; d16
-
-	move.w	#%1000000100101000,(a2)+	; OR.b D0,d16(A0)
-		; ^^^^                  OR
-		;     ^^^               D0
-		;        ^^^            .b Dn,<ea>
-		;           ^^^         d16(An)
-		;              ^^^      A0
-	move.w	#-13*160,(a2)+			; d16
-
-	move.w	#%1000000100101000,(a2)+	; OR.b D0,d16(A0)
-		; ^^^^                  OR
-		;     ^^^               D0
-		;        ^^^            .b Dn,<ea>
-		;           ^^^         d16(An)
-		;              ^^^      A0
-	move.w	#-12*160,(a2)+			; d16
-
-	move.w	#%1000000100101000,(a2)+	; OR.b D0,d16(A0)
-		; ^^^^                  OR
-		;     ^^^               D0
-		;        ^^^            .b Dn,<ea>
-		;           ^^^         d16(An)
-		;              ^^^      A0
-	move.w	#-11*160,(a2)+			; d16
-
-	move.w	#%1000000100101000,(a2)+	; OR.b D0,d16(A0)
-		; ^^^^                  OR
-		;     ^^^               D0
-		;        ^^^            .b Dn,<ea>
-		;           ^^^         d16(An)
-		;              ^^^      A0
-	move.w	#-10*160,(a2)+			; d16
-
-	move.w	#%1000000100101000,(a2)+	; OR.b D0,d16(A0)
-		; ^^^^                  OR
-		;     ^^^               D0
-		;        ^^^            .b Dn,<ea>
-		;           ^^^         d16(An)
-		;              ^^^      A0
-	move.w	#-9*160,(a2)+			; d16
-
-	move.w	#%1000000100101000,(a2)+	; OR.b D0,d16(A0)
-		; ^^^^                  OR
-		;     ^^^               D0
-		;        ^^^            .b Dn,<ea>
-		;           ^^^         d16(An)
-		;              ^^^      A0
-	move.w	#-8*160,(a2)+			; d16
-
-	move.w	#%1000000100101000,(a2)+	; OR.b D0,d16(A0)
-		; ^^^^                  OR
-		;     ^^^               D0
-		;        ^^^            .b Dn,<ea>
-		;           ^^^         d16(An)
-		;              ^^^      A0
-	move.w	#-7*160,(a2)+			; d16
-
-	move.w	#%1000000100101000,(a2)+	; OR.b D0,d16(A0)
-		; ^^^^                  OR
-		;     ^^^               D0
-		;        ^^^            .b Dn,<ea>
-		;           ^^^         d16(An)
-		;              ^^^      A0
-	move.w	#-6*160,(a2)+			; d16
-
-	move.w	#%1000000100101000,(a2)+	; OR.b D0,d16(A0)
-		; ^^^^                  OR
-		;     ^^^               D0
-		;        ^^^            .b Dn,<ea>
-		;           ^^^         d16(An)
-		;              ^^^      A0
-	move.w	#-5*160,(a2)+			; d16
-
-	move.w	#%1000000100101000,(a2)+	; OR.b D0,d16(A0)
-		; ^^^^                  OR
-		;     ^^^               D0
-		;        ^^^            .b Dn,<ea>
-		;           ^^^         d16(An)
-		;              ^^^      A0
-	move.w	#-4*160,(a2)+			; d16
-
-	move.w	#%1000000100101000,(a2)+	; OR.b D0,d16(A0)
-		; ^^^^                  OR
-		;     ^^^               D0
-		;        ^^^            .b Dn,<ea>
-		;           ^^^         d16(An)
-		;              ^^^      A0
-	move.w	#-3*160,(a2)+			; d16
-
-	move.w	#%1000000100101000,(a2)+	; OR.b D0,d16(A0)
-		; ^^^^                  OR
-		;     ^^^               D0
-		;        ^^^            .b Dn,<ea>
-		;           ^^^         d16(An)
-		;              ^^^      A0
-	move.w	#-2*160,(a2)+			; d16
-
-	move.w	#%1000000100101000,(a2)+	; OR.b D0,d16(A0)
-		; ^^^^                  OR
-		;     ^^^               D0
-		;        ^^^            .b Dn,<ea>
-		;           ^^^         d16(An)
-		;              ^^^      A0
-	move.w	#-1*160,(a2)+			; d16
-
-	move.w	#%1000000100101000,(a2)+	; OR.b D0,d16(A0)
-		; ^^^^                  OR
-		;     ^^^               D0
-		;        ^^^            .b Dn,<ea>
-		;           ^^^         d16(An)
-		;              ^^^      A0
-	move.w	#0,(a2)+			; d16
-
-	move.w	#%0100111001110101,(a2)+	; RTS
-		; ^^^^^^^^^^^^^^^^	RTS
 
 	cmp.w	d1,d3
 	ble.s	.ends_ordered	; d3<=d1
@@ -809,6 +677,53 @@ fast_vertical_ish:
 	moveq.l	#%00000001,d7
 
 	jmp	(a1) ; TODO: find which segment to use
+
+generate_fast_line_code:
+	lea.l	df_lcode,a2
+
+	move	#%0000000010000000,d0
+	moveq	#0,d1
+	move	#-150*16,d2
+	moveq	#15,d7
+
+	move.w	#%1101000011111100,(a2)+	; ADDA.w #<data>,A0
+		; ^^^^                  ADD/ADDA
+		;     ^^^               A0
+		;        ^^^            .w
+		;           ^^^^^^      #<data>
+	move.w	#160*16,(a2)+			; <data>
+
+	add.w	#60,a2
+
+
+.write_or_loop:
+	tst.w	d1
+	bne.s	.relative_address
+
+	move.w	#%1000000100010000,(a2)+	; OR.b D0,(A0)
+		; ^^^^----------------- OR
+		;     ^^^-------------- D0
+		;        ^^^----------- .b Dn,<ea>
+		;           ^^^-------- (An)
+		;              ^^^----- A0
+
+.relative_address:
+	move.w	#%1000000100101000,(a2)+	; OR.b D0,d16(A0)
+		; ^^^^                  OR
+		;     ^^^               D0
+		;        ^^^            .b Dn,<ea>
+		;           ^^^         d16(An)
+		;              ^^^      A0
+	move.w	d1,(a2)+			; d16
+
+.or_written:
+	add	#160,d1
+	dbra	d7,.write_or_loop
+
+	move.w	#%0100111001110101,(a2)+	; RTS
+		; ^^^^^^^^^^^^^^^^	RTS
+
+	rts
 
 ; Initialized data
 	.data
