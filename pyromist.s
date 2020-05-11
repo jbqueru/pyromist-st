@@ -711,44 +711,43 @@ fast_vertical_ish:
 	jmp	(a1) ; TODO: find which segment to use
 
 generate_fast_line_code:
-	lea.l	df_lcode,a2
+	lea.l	df_lcode+70,a2
 
-	move	#-150*16,d2
+	moveq	#0,d2
 	moveq	#15,d7
 
-	move.w	#%1101000011111100,(a2)+	; ADDA.w #<data>,A0
-		; ^^^^                  ADD/ADDA
-		;     ^^^               A0
-		;        ^^^            .w
-		;           ^^^^^^      #<data>
-	move.w	#160*16,(a2)+			; <data>
+	subq.l	#2,a2
 
-.write_or_loop:
-	tst.w	d2
-	bne.s	.relative_address
+	move.w	#%0100111001110101,-(a2)	; RTS
+		; ^^^^^^^^^^^^^^^^	RTS
 
-	move.w	#%1000000100010000,(a2)+	; OR.b D0,(A0)
+	move.w	#%1000000100010000,-(a2)	; OR.b D0,(A0)
 		; ^^^^----------------- OR
 		;     ^^^-------------- D0
 		;        ^^^----------- .b Dn,<ea>
 		;           ^^^-------- (An)
 		;              ^^^----- A0
+	bra.s	.or_written
 
-.relative_address:
-	move.w	#%1000000100101000,(a2)+	; OR.b D0,d16(A0)
+.write_or_loop:
+	move.w	d2,-(a2)			; d16
+	move.w	#%1000000100101000,-(a2)	; OR.b D0,d16(A0)
 		; ^^^^                  OR
 		;     ^^^               D0
 		;        ^^^            .b Dn,<ea>
 		;           ^^^         d16(An)
 		;              ^^^      A0
-	move.w	d2,(a2)+			; d16
 
 .or_written:
-	add	#160,d2
+	sub	#160,d2
 	dbra	d7,.write_or_loop
 
-	move.w	#%0100111001110101,(a2)+	; RTS
-		; ^^^^^^^^^^^^^^^^	RTS
+	move.w	#160*16,-(a2)			; <data>
+	move.w	#%1101000011111100,-(a2)	; ADDA.w #<data>,A0
+		; ^^^^                  ADD/ADDA
+		;     ^^^               A0
+		;        ^^^            .w
+		;           ^^^^^^      #<data>
 
 	rts
 
