@@ -176,43 +176,19 @@ clear_screen:
 	movea.l	back_buffer,a0
 	bsr	draw_line
 
-	move.w	#47,d0
+	move.w	#37,d0
 	move.w	#0,d1
-	move.w	#16,d2
-	move.w	#198,d3
-	movea.l	back_buffer,a0
-	addq.l	#2,a0
-	bsr	draw_fast_line
-
-	move.w	#35,d0
-	move.w	#0,d1
-	move.w	#4,d2
+	move.w	#176,d2
 	move.w	#198,d3
 	movea.l	back_buffer,a0
 	bsr	draw_line
 
-	move.w	#51,d0
+	move.w	#282,d0
 	move.w	#0,d1
-	move.w	#20,d2
-	move.w	#198,d3
-	movea.l	back_buffer,a0
-	addq.l	#2,a0
-	bsr	draw_fast_line
-
-	move.w	#284,d0
-	move.w	#0,d1
-	move.w	#315,d2
+	move.w	#143,d2
 	move.w	#198,d3
 	movea.l	back_buffer,a0
 	bsr	draw_line
-
-	move.w	#268,d0
-	move.w	#0,d1
-	move.w	#299,d2
-	move.w	#198,d3
-	movea.l	back_buffer,a0
-	addq.l	#2,a0
-	bsr	draw_fast_line
 
 	move.w	#288,d0
 	move.w	#0,d1
@@ -221,13 +197,49 @@ clear_screen:
 	movea.l	back_buffer,a0
 	bsr	draw_line
 
-	move.w	#272,d0
+	move.w	#$007,$ffff8240.w
+	.rept	124
+	nop
+	.endr
+	move.w	#0,$ffff8240.w
+
+	move.w	#34,d0
 	move.w	#0,d1
-	move.w	#303,d2
+	move.w	#3,d2
 	move.w	#198,d3
 	movea.l	back_buffer,a0
 	addq.l	#2,a0
 	bsr	draw_fast_line
+
+	move.w	#40,d0
+	move.w	#0,d1
+	move.w	#179,d2
+	move.w	#198,d3
+	movea.l	back_buffer,a0
+	addq.l	#2,a0
+	bsr	draw_fast_line
+
+	move.w	#279,d0
+	move.w	#0,d1
+	move.w	#140,d2
+	move.w	#198,d3
+	movea.l	back_buffer,a0
+	addq.l	#2,a0
+	bsr	draw_fast_line
+
+	move.w	#285,d0
+	move.w	#0,d1
+	move.w	#316,d2
+	move.w	#198,d3
+	movea.l	back_buffer,a0
+	addq.l	#2,a0
+	bsr	draw_fast_line
+
+	move.w	#$077,$ffff8240.w
+	.rept	124
+	nop
+	.endr
+	move.w	#0,$ffff8240.w
 
 	move.w	#160,d0	; x1
 	move.w	#100,d1	; y1
@@ -235,7 +247,7 @@ clear_screen:
 	move.w	line_end_y,d3	; y2
 	movea.l	back_buffer,a0
 	addq.l	#2,a0
-	bsr	draw_line
+	bsr	draw_fast_line
 
 	cmp.w	#0,line_end_x
 	beq.s	.left_side
@@ -264,7 +276,7 @@ clear_screen:
 	addi.w	#256,d4
 	andi.w	#1023,d4
 	add.w	d4,d4
-	moveq	#48,d0
+	moveq	#64,d0
 	muls	(a0,d4),d0
 	add.l	d0,d0
 	swap	d0
@@ -272,7 +284,7 @@ clear_screen:
 
 	move.w	square_rotation,d4
 	add.w	d4,d4
-	moveq	#48,d1
+	moveq	#64,d1
 	muls	(a0,d4),d1
 	add.l	d1,d1
 	swap	d1
@@ -289,7 +301,7 @@ clear_screen:
 	add.w	square_cos,d3
 	movea.l	back_buffer,a0
 	addq.l	#2,a0
-	bsr	draw_line
+	bsr	draw_fast_line
 
 	move.w	#160,d2
 	move.w	#100,d3
@@ -301,7 +313,7 @@ clear_screen:
 	add.w	square_sin,d1
 	movea.l	back_buffer,a0
 	addq.l	#2,a0
-	bsr	draw_line
+	bsr	draw_fast_line
 
 	move.w	#160,d2
 	move.w	#100,d3
@@ -313,7 +325,7 @@ clear_screen:
 	sub.w	square_cos,d3
 	movea.l	back_buffer,a0
 	addq.l	#2,a0
-	bsr	draw_line
+	bsr	draw_fast_line
 
 	move.w	#160,d2
 	move.w	#100,d3
@@ -325,7 +337,7 @@ clear_screen:
 	sub.w	square_sin,d1
 	movea.l	back_buffer,a0
 	addq.l	#2,a0
-	bsr	draw_line
+	bsr	draw_fast_line
 
 
 	move.w	square_rotation,d0
@@ -344,15 +356,15 @@ clear_screen:
 	movea.l	#user_start,a0
 
 	movea.l	back_buffer,a1
-	adda.w	#52,a1
+	adda.w	#76,a1
 
-	.rept 1
+	.rept 32
 
 	move.w	(a0)+,d0
-	andi.w	#$3c3c,d0
+	andi.w	#$3ffc,d0
 	move.w	d0,(a1)
 	move.w	(a0)+,d0
-	andi.w	#$3c3c,d0
+	andi.w	#$a5a5,d0
 	move.w	d0,8(a1)
 	adda.w	#20,a0
 	adda.w	#160,a1
