@@ -152,7 +152,7 @@ fl_vertical_ish:
 ; How to best determine how many lines to draw?
 ; d5 is delta-y, easy to decrement by 16 and test for small numbers
 
-	lea.l	dl_seg_l_w,a6
+	lea.l	fl_vi_seg_addr,a6
 .next_segment:
 	cmp.w	#16,d5 ; getting close to the end of the line?
 	blt.s	.last_segment
@@ -215,7 +215,7 @@ fl_vertical_ish:
 ; TODO: eliminate duplicate vertical segments.
 
 fast_line_init:
-	lea.l	dl_seg_l_w,a6
+	lea.l	fl_vi_seg_addr,a6
 	lea.l	fl_vi_code,a5
 	moveq.l	#1,d7	; x increment. positive = right (top-right)
 .loop_direction:

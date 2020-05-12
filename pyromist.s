@@ -489,8 +489,10 @@ stack_top:
 raw_buffer:
 	ds.b	32000*9+254
 
-dl_seg_l_w	== raw_buffer+254+32000+32000
-dl_seg_l_p	== dl_seg_l_w+1088	; 1088 is 17*16*4
-fl_vi_code	== dl_seg_l_p+1088
+; addresses for fast line-drawing code
+
+fl_vi_seg_addr	== raw_buffer+254+32000+32000
+fl_vi_code	== fl_vi_seg_addr+2176		; 34*16*4
+end_fl_vi_code	== fl_vi_code + 38080		; 34*16*70 (~1600 to squeeze?)
 
 end_bss:
