@@ -187,7 +187,7 @@ fl_vertical_ish:
 	add.w	d7,d7
 	move.l	(a6,d7.w),-(a7)
 
-	andi.l	#$3ffff,d1
+	andi.l	#$fffff,d1
 	move.l	d1,d0
 	bra.s	.next_segment
 .last_segment:
