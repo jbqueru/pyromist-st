@@ -107,7 +107,7 @@ soup2:
 	move.b	front_buffer+2,$ffff8203.w
 
 ; Generate line-drawing code
-	jsr	generate_fast_line_code
+	jsr	fast_line_init
 
 ; Enable interrupts
 ;	move.b	#1,$fffffa07.w
@@ -593,7 +593,7 @@ draw_fast_line:
 .positive_dy: ; from this point d5 is abs(y1-y2)
 	cmp.w	d4,d5
 	beq.s	fast_diagonal ; abs(y1-y2)=abs(x1-x2), diagonal line
-	bge.s	fast_vertical_ish ; d5>=d4, abs(y1-y2)>=abs(x1-x2)
+	bge.s	fl_vertical_ish ; d5>=d4, abs(y1-y2)>=abs(x1-x2)
 	bra.s	fast_horizontal_ish
 
 ; Draw vertical line
@@ -644,7 +644,7 @@ fast_horizontal_ish:
 ;
 ; Registers modified: All
 
-fast_vertical_ish:
+fl_vertical_ish:
 
 	cmp.w	d1,d3
 	ble.s	.ends_ordered	; d3<=d1
@@ -678,11 +678,13 @@ fast_vertical_ish:
 ; How to best determine how many lines to draw?
 ; d5 is delta-y, easy to decrement by 16 and test for small numbers
 
+	lea.l	dl_seg_l_w,a6
 .next_segment:
 	cmp.w	#16,d5 ; getting close to the end of the line?
 	blt.s	.last_segment
 	sub.w	#16,d5
-	pea	df_lcode ; TODO: find which segment to use
+	move.w	#543*4,d0
+	move.l	(a6,d0.w),-(a7)
 	bra.s	.next_segment
 .last_segment:
 	add.w	d5,d3
@@ -716,66 +718,99 @@ fast_vertical_ish:
 
 ; TODO: re-organize registers
 
-generate_fast_line_code:
-	lea.l	df_lcode,a2
+; 4 nested loops:
+; - direction (outer, 2 values, not necessarily implemented as a loop)
+;	stored in d7
+; - line size (middle, 17 possible values, expressed as Bresenham steps)
+;	stored in d6
+; - pixel alignment (inner, 16 possible values)
+;	stored in d5
+; - row counter
+;	stored in d4
 
-	move.w	#%0101010101010101,d0
-	moveq.l	#3,d1	; x offset within word. 0 = left (MSB)
-	moveq.l	#-1,d5	; x increment. positive = right (top-right)
+; write function pointers in a6
+; write code in a5
+; Bresenham values in a4
+
+; Bresenham steps in d3
+; Address offset in d2
+; Pixel x position within word in d1
+
+; temp: pointer to code being written (a0)
+; temp: shifted pixel mod 8, as data register number (d0)
+; temp: byte-level address from word-level address (d0)
+
+; TODO: eliminate duplicate vertical segments.
+
+fast_line_init:
+	lea.l	dl_seg_l_w,a6
+	lea.l	df_lcode,a5
+	moveq.l	#1,d7	; x increment. positive = right (top-right)
+.loop_direction:
+	lea.l	fl_bresenham_patterns,a4
+	moveq.l	#16,d6
+.loop_line_width:
+	move.w	(a4)+,d3 ; Bresenham steps. MSB = bottom.
+	moveq.l	#15,d5
+.loop_horiz_alignment:
+	moveq.l	#15,d4	; line counter
 	moveq.l	#0,d2	; address offset to address of end of line
-	moveq.l	#15,d7	; loop counter
+	moveq.l	#3,d1	; x offset within word. 0 = left (MSB)
+
+	move.l	a5,(a6)+
 
 	btst.l	#3,d1
-	bne.s	.long_loop
-	adda.w	#68,a2
+	bne.s	.long_code
+	adda.w	#68,a5
 	bra.s	.loop_length_ok
-.long_loop:
-	adda.w	#70,a2
+.long_code:
+	adda.w	#70,a5
 .loop_length_ok:
+	move.l	a5,a0
 
-	move.w	#%0100111001110101,-(a2)	; RTS
+	move.w	#%0100111001110101,-(a0)	; RTS
 		; ^^^^^^^^^^^^^^^^-------------- RTS
 
 	btst.l	#3,d1
 	bne.s	.write_or_loop
 
-	move.l	d1,d6
-	andi.w	#7,d6
-	swap	d6
-	lsr.l	#7,d6
-	or.w	#%1000000100010000,d6	; OR.b Dn,(A0)
+	move.l	d1,d0
+	andi.w	#7,d0
+	swap	d0
+	lsr.l	#7,d0
+	or.w	#%1000000100010000,d0	; OR.b Dn,(A0)
 		; ^^^^------------------ OR
 		;     ^^^--------------- Dn
 		;        ^^^------------ .b Dn,<ea>
 		;           ^^^--------- (An)
 		;              ^^^------ A0
-	move.w	d6,-(a2)
+	move.w	d0,-(a0)
 	bra.s	.or_written
 
 .write_or_loop:
-	move.w	d2,d3
+	move.w	d2,d0
 	btst.l	#3,d1
 	beq.s	.address_adjusted
-	addq.w	#1,d3
+	addq.w	#1,d0
 .address_adjusted:
-	move.w	d3,-(a2)		; d16
+	move.w	d0,-(a0)		; d16
 
-	move.l	d1,d6
-	andi.w	#7,d6
-	swap	d6
-	lsr.l	#7,d6
-	or.w	#%1000000100101000,d6	; OR.b D0,d16(A0)
+	move.l	d1,d0
+	andi.w	#7,d0
+	swap	d0
+	lsr.l	#7,d0
+	or.w	#%1000000100101000,d0	; OR.b D0,d16(A0)
 		; ^^^^------------------ OR
 		;     ^^^--------------- D0
 		;        ^^^------------ .b Dn,<ea>
 		;           ^^^--------- d16(An)
 		;              ^^^------ A0
-	move.w	d6,-(a2)
+	move.w	d0,-(a0)
 
 .or_written:
-	btst.l	d7,d0
+	btst.l	d4,d3
 	beq.s	.bresenham_done
-	add.w	d5,d1
+	add.w	d7,d1
 	bmi.s	.underflow
 	btst.l	#4,d1
 	beq.s	.word_address_ok
@@ -788,18 +823,48 @@ generate_fast_line_code:
 .word_address_ok:
 .bresenham_done:
 	sub	#160,d2
-	dbra	d7,.write_or_loop
+	dbra	d4,.write_or_loop
 
 	neg.w	d2
-	move.w	d2,-(a2)			; <data>
-	move.w	#%1101000011111100,-(a2)	; ADDA.w #<data>,A0
+	move.w	d2,-(a0)			; <data>
+	move.w	#%1101000011111100,-(a0)	; ADDA.w #<data>,A0
 		; ^^^^-------------------------- ADD/ADDA
 		;     ^^^----------------------- A0
 		;        ^^^-------------------- .w
 		;           ^^^^^^-------------- #<data>
 
-	rts
+	dbra	d5,.loop_horiz_alignment
+	dbra	d6,.loop_line_width
+	tst.w	d7
+	bpl.s	.second_direction
 
+	rts
+.second_direction:
+	moveq.l	#-1,d7
+	bra	.loop_direction
+
+	.data
+
+fl_bresenham_patterns:
+	dc.w	%0000000000000000
+	dc.w	%0000000100000000
+	dc.w	%0001000000010000
+	dc.w	%0010000100000100
+	dc.w	%0100010001000100
+	dc.w	%0100100100010010
+	dc.w	%0101001001010010
+	dc.w	%0101010100101010
+	dc.w	%1010101010101010
+	dc.w	%1010101101010101
+	dc.w	%1011010110110101
+	dc.w	%1011010101101101
+	dc.w	%1101110111011101
+	dc.w	%1101111101111011
+	dc.w	%1111011111110111
+	dc.w	%1111111101111111
+	dc.w	%1111111111111111
+
+	.text
 ; Initialized data
 	.data
 my_palette:
