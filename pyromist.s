@@ -221,9 +221,9 @@ clear_screen:
 	movea.l	back_buffer,a0
 	bsr	draw_line
 
-	move.w	#262,d0
+	move.w	#272,d0
 	move.w	#0,d1
-	move.w	#313,d2
+	move.w	#303,d2
 	move.w	#198,d3
 	movea.l	back_buffer,a0
 	addq.l	#2,a0
