@@ -199,9 +199,11 @@ fl_vertical_ish:
 	add.w	d5,d3
 	mulu.w	#160,d3
 
-	andi.w	#$fff0,d2	; TODO: d2 is NOT the proper x coordinate
-	lsr.w	d2
-	add.w	d2,d3
+	move.l	d0,d4
+	swap.w	d4
+	andi.w	#$fff0,d4
+	lsr.w	d4
+	add.w	d4,d3
 	adda.w	d3,a0		; a0 is the address where we draw
 
 	swap.w	d0
