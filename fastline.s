@@ -364,6 +364,8 @@ fast_line_init:
 
 	.data
 
+; 17 Bresenham patterns, n x 16 pixels for n between 0 and 16 inclusive.
+; This is too small to be worth computing on the fly.
 fl_bresenham_patterns:
 	dc.w	%0000000000000000
 	dc.w	%0000000100000000
