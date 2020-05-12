@@ -179,8 +179,10 @@ fl_vertical_ish:
 
 	move.l	d0,d1
 	add.l	d4,d1
-	sub.l	d1,d0
 	swap.w	d0
+	swap.w	d1
+	sub.w	d1,d0
+	swap.w	d1
 	neg.w	d0
 	lsl.w	#4,d0
 	add.w	d0,d7
