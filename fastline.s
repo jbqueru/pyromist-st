@@ -143,7 +143,6 @@ fl_vertical_ish:
 	lsl.l	#4,d4	; d4 is the Bresenham step for 16 pixels, stored as
 			; 16:16, with 12 significant fractional bits
 
-	andi.w	#15,d0
 	swap d0
 	move.w	#$7fff,d0
 
@@ -158,7 +157,7 @@ fl_vertical_ish:
 ; How to best determine how many lines to draw?
 ; d5 is delta-y, easy to decrement by 16 and test for small numbers
 
-; d0 is x position in segment, in 16:16
+; d0 is x position, in 16:16
 ; d1 is unused?
 ; d2 is x of top end of line
 ; d3 is y of top end of line
@@ -175,6 +174,7 @@ fl_vertical_ish:
 ; Draw a whole segment
 	swap.w	d0
 	move.w	d0,d7
+	andi.w	#15,d7
 	swap.w	d0
 
 	move.l	d0,d1
@@ -191,7 +191,6 @@ fl_vertical_ish:
 	add.w	d7,d7
 	move.l	(a6,d7.w),-(a7)
 
-	andi.l	#$fffff,d1
 	move.l	d1,d0
 
 	bra.s	.next_segment
@@ -207,6 +206,7 @@ fl_vertical_ish:
 
 	swap.w	d0
 	move.w	d0,d7
+	andi.w	#15,d7
 	swap.w	d0
 	add.w	d7,d7
 	add.w	d7,d7
