@@ -169,18 +169,62 @@ clear_screen:
 	.endr
 	move.w	#0,$ffff8240.w
 
-	move.w	#240,d0
-	move.w	#100,d1
-	move.w	#240+36,d2
-	move.w	#100+72,d3
+	move.w	#1,d0
+	move.w	#0,d1
+	move.w	#0,d2
+	move.w	#199,d3
+	movea.l	back_buffer,a0
+	bsr	draw_line
+
+	move.w	#1,d0
+	move.w	#0,d1
+	move.w	#0,d2
+	move.w	#199,d3
 	movea.l	back_buffer,a0
 	addq.l	#2,a0
 	bsr	draw_fast_line
 
-	move.w	#240,d0
-	move.w	#100,d1
-	move.w	#240+36,d2
-	move.w	#100-72,d3
+	move.w	#4,d0
+	move.w	#0,d1
+	move.w	#3,d2
+	move.w	#199,d3
+	movea.l	back_buffer,a0
+	bsr	draw_line
+
+	move.w	#4,d0
+	move.w	#0,d1
+	move.w	#3,d2
+	move.w	#199,d3
+	movea.l	back_buffer,a0
+	addq.l	#2,a0
+	bsr	draw_fast_line
+
+	move.w	#316,d0
+	move.w	#0,d1
+	move.w	#315,d2
+	move.w	#199,d3
+	movea.l	back_buffer,a0
+	bsr	draw_line
+
+	move.w	#316,d0
+	move.w	#0,d1
+	move.w	#315,d2
+	move.w	#199,d3
+	movea.l	back_buffer,a0
+	addq.l	#2,a0
+	bsr	draw_fast_line
+
+	move.w	#319,d0
+	move.w	#0,d1
+	move.w	#318,d2
+	move.w	#199,d3
+	movea.l	back_buffer,a0
+	bsr	draw_line
+
+	move.w	#319,d0
+	move.w	#0,d1
+	move.w	#318,d2
+	move.w	#199,d3
 	movea.l	back_buffer,a0
 	addq.l	#2,a0
 	bsr	draw_fast_line
@@ -191,7 +235,7 @@ clear_screen:
 	move.w	line_end_y,d3	; y2
 	movea.l	back_buffer,a0
 	addq.l	#2,a0
-	bsr	draw_line
+	bsr	draw_fast_line
 
 	cmp.w	#0,line_end_x
 	beq.s	.left_side
@@ -302,7 +346,7 @@ clear_screen:
 	movea.l	back_buffer,a1
 	adda.w	#52,a1
 
-	.rept 64
+	.rept 1
 
 	move.w	(a0)+,d0
 	andi.w	#$3c3c,d0
