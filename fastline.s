@@ -125,12 +125,14 @@ fl_vertical_ish:
 	exg	d0,d2
 	exg	d1,d3
 .ends_ordered:	; from this point the ends are in order, d1>=d3.
+	lea.l	fl_vi_seg_addr,a6
 	move.w	d1,d5
 	sub.w	d3,d5	; d5 is delta-y, guaranteed to be positive
 	move.w	d2,d4
 	sub.w	d0,d4	; d4 is delta-x
 	bpl.s	.positive_slope
-	neg.w	d4	; TODO: remember that we're drawing in the other direction
+	neg.w	d4
+	adda.w	#1088,a6
 .positive_slope:	; d4 and d5 are positive delta-x and delta-y
 	swap.w	d4
 	clr.w	d4
@@ -140,6 +142,10 @@ fl_vertical_ish:
 	swap.w	d4
 	lsl.l	#4,d4	; d4 is the Bresenham step for 16 pixels, stored as
 			; 16:16, with 12 significant fractional bits
+
+	andi.w	#15,d0
+	swap d0
+	move.w	#$7fff,d0
 
 ; At the end, need to figure out the coordinates of the last point of
 ; the first (partial) segment, and need to figure out the size of that
@@ -152,13 +158,37 @@ fl_vertical_ish:
 ; How to best determine how many lines to draw?
 ; d5 is delta-y, easy to decrement by 16 and test for small numbers
 
-	lea.l	fl_vi_seg_addr,a6
+; d0 is x position in segment, in 16:16
+; d1 is unused?
+; d2 is x of top end of line
+; d3 is y of top end of line
+; d4 is Bresenham in 16:16
+; d5 is number of pixels that haven't been processed yet
+; d6 is unused
+; d7 is unused
+
 .next_segment:
 	cmp.w	#16,d5 ; getting close to the end of the line?
 	blt.s	.last_segment
 	sub.w	#16,d5
-	move.w	#0,d0
-	move.l	(a6,d0.w),-(a7)
+	swap.w	d0
+	move.w	d0,d7
+	swap.w	d0
+
+	move.l	d0,d1
+	add.l	d4,d1
+	sub.l	d1,d0
+	swap.w	d0
+	neg.w	d0
+	lsl.w	#4,d0
+	add.w	d0,d7
+
+	add.w	d7,d7
+	add.w	d7,d7
+	move.l	(a6,d7.w),-(a7)
+
+	andi.l	#$3ffff,d1
+	move.l	d1,d0
 	bra.s	.next_segment
 .last_segment:
 	add.w	d5,d3
@@ -166,11 +196,18 @@ fl_vertical_ish:
 	andi.w	#$fff0,d2	; TODO: d2 is NOT the proper x coordinate
 	lsr.w	d2
 	add.w	d2,d3
-	adda.w	d3,a0
+	adda.w	d3,a0		; a0 is the address where we draw
+
+	swap.w	d0
+	move.w	d0,d7
+	swap.w	d0
+	add.w	d7,d7
+	add.w	d7,d7
+	move.l	(a6,d7.w),a1
 
 	add.w	d5,d5
 	add.w	d5,d5
-	lea.l	fl_vi_code+64,a1
+	sub.w	#64,d5
 	suba.w	d5,a1
 
 	moveq.l	#%10000000,d0
