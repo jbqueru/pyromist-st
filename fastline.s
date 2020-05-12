@@ -131,16 +131,13 @@ fl_vertical_ish:
 	move.w	d2,d4
 	sub.w	d0,d4	; d4 is delta-x
 	bpl.s	.positive_slope
-	neg.w	d4
 	adda.w	#1088,a6	; TODO: more work for other diagonal
 .positive_slope:	; d4 and d5 are positive delta-x and delta-y
 	swap.w	d4
 	clr.w	d4
-	divu.w	d5,d4	; TODO: don't compute the slope for small lines
-	swap.w	d4
-	clr.w	d4
-	swap.w	d4
-	lsl.l	#4,d4	; d4 is the Bresenham step for 16 pixels, stored as
+	divs.w	d5,d4	; TODO: don't compute the slope for small lines
+	ext.l	d4
+	asl.l	#4,d4	; d4 is the Bresenham step for 16 pixels, stored as
 			; 16:16, with 12 significant fractional bits
 
 	swap d0
@@ -183,7 +180,10 @@ fl_vertical_ish:
 	swap.w	d1
 	sub.w	d1,d0
 	swap.w	d1
+	tst.l	d4
+	bmi.s	.diag_adjusted
 	neg.w	d0
+.diag_adjusted:
 	lsl.w	#4,d0
 	add.w	d0,d7
 
