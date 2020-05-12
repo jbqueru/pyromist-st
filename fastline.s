@@ -132,7 +132,7 @@ fl_vertical_ish:
 	sub.w	d0,d4	; d4 is delta-x
 	bpl.s	.positive_slope
 	neg.w	d4
-	adda.w	#1088,a6
+	adda.w	#1088,a6	; TODO: more work for other diagonal
 .positive_slope:	; d4 and d5 are positive delta-x and delta-y
 	swap.w	d4
 	clr.w	d4
@@ -170,7 +170,9 @@ fl_vertical_ish:
 .next_segment:
 	cmp.w	#16,d5 ; getting close to the end of the line?
 	blt.s	.last_segment
-	sub.w	#16,d5
+	sub.w	#16,d5 ; segment done, 16 fewer pixels to go.
+
+; Draw a whole segment
 	swap.w	d0
 	move.w	d0,d7
 	swap.w	d0
@@ -189,10 +191,13 @@ fl_vertical_ish:
 
 	andi.l	#$fffff,d1
 	move.l	d1,d0
+
 	bra.s	.next_segment
+
 .last_segment:
 	add.w	d5,d3
 	mulu.w	#160,d3
+
 	andi.w	#$fff0,d2	; TODO: d2 is NOT the proper x coordinate
 	lsr.w	d2
 	add.w	d2,d3
