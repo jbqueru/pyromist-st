@@ -120,7 +120,6 @@ fast_horizontal_ish:
 ; Registers modified: All
 
 fl_vertical_ish:
-
 	cmp.w	d1,d3
 	ble.s	.ends_ordered	; d3<=d1
 	exg	d0,d2
@@ -228,7 +227,8 @@ fast_line_init:
 .loop_horiz_alignment:
 	moveq.l	#15,d4	; line counter
 	moveq.l	#0,d2	; address offset to address of end of line
-	moveq.l	#3,d1	; x offset within word. 0 = left (MSB)
+	moveq.l	#15,d1	; x offset within word. 0 = left (MSB)
+	sub.w	d5,d1
 
 	move.l	a5,(a6)+
 
