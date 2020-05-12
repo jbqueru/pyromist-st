@@ -173,18 +173,24 @@ clear_screen:
 	move.w	#100,d1
 	move.w	#240+36,d2
 	move.w	#100+72,d3
+	movea.l	back_buffer,a0
+	addq.l	#2,a0
 	bsr	draw_fast_line
 
 	move.w	#240,d0
 	move.w	#100,d1
 	move.w	#240+36,d2
 	move.w	#100-72,d3
+	movea.l	back_buffer,a0
+	addq.l	#2,a0
 	bsr	draw_fast_line
 
 	move.w	#160,d0	; x1
 	move.w	#100,d1	; y1
 	move.w	line_end_x,d2	; x2
 	move.w	line_end_y,d3	; y2
+	movea.l	back_buffer,a0
+	addq.l	#2,a0
 	bsr	draw_line
 
 	cmp.w	#0,line_end_x
@@ -237,6 +243,8 @@ clear_screen:
 	sub.w	square_sin,d1
 	add.w	square_sin,d2
 	add.w	square_cos,d3
+	movea.l	back_buffer,a0
+	addq.l	#2,a0
 	bsr	draw_line
 
 	move.w	#160,d2
@@ -247,6 +255,8 @@ clear_screen:
 	add.w	square_cos,d3
 	sub.w	square_cos,d0
 	add.w	square_sin,d1
+	movea.l	back_buffer,a0
+	addq.l	#2,a0
 	bsr	draw_line
 
 	move.w	#160,d2
@@ -257,6 +267,8 @@ clear_screen:
 	add.w	square_sin,d1
 	sub.w	square_sin,d2
 	sub.w	square_cos,d3
+	movea.l	back_buffer,a0
+	addq.l	#2,a0
 	bsr	draw_line
 
 	move.w	#160,d2
@@ -267,6 +279,8 @@ clear_screen:
 	sub.w	square_cos,d3
 	add.w	square_cos,d0
 	sub.w	square_sin,d1
+	movea.l	back_buffer,a0
+	addq.l	#2,a0
 	bsr	draw_line
 
 
@@ -423,15 +437,14 @@ draw_line:
 ; d4 is the address offset when changing lines.
 
 ; Compute start address and start pixel pattern
-	move.l	back_buffer,a0 ; TODO: pass framebuffer address as parameter
 	mulu.w	#160,d1
-	lea.l	(a0,d1.w),a0
+	adda.w	d1,a0
 	move.w	d0,d1
 	lsr.w	#1,d0
 	and.w	#248,d0
-	lea.l	2(a0,d0.w),a0 ; TODO: remove offset when address is param
+	adda.w	d0,a0
 	move.w	#$8000,d5 ; pixel pattern
-	and	#15,d1
+	andi.w	#15,d1
 	lsr.w	d1,d5
 
 ; Check which type of line we're drawing
@@ -554,16 +567,16 @@ draw_fast_line:
 
 ; Draw vertical line
 fast_vertical:
-	rts
+	bra	draw_line
 ; Draw horizonal line
 fast_horizontal:
-	rts
+	bra	draw_line
 ; Draw diagonal line
 fast_diagonal:
-	rts
+	bra	draw_line
 ; Draw horizonal_ish line
 fast_horizontal_ish:
-	rts
+	bra	draw_line
 
 ; **************************
 ; * Draw vertical-ish line *
@@ -639,17 +652,15 @@ fl_vertical_ish:
 	cmp.w	#16,d5 ; getting close to the end of the line?
 	blt.s	.last_segment
 	sub.w	#16,d5
-	move.w	#543*4,d0
+	move.w	#0,d0
 	move.l	(a6,d0.w),-(a7)
 	bra.s	.next_segment
 .last_segment:
 	add.w	d5,d3
 	mulu.w	#160,d3
-	movea.l	back_buffer,a0	; TODO: get as parameter
 	andi.w	#$fff0,d2	; TODO: d2 is NOT the proper x coordinate
 	lsr.w	d2
 	add.w	d2,d3
-	addq.w	#2,d3		; TODO: remove once address is a parameter
 	adda.w	d3,a0
 
 	add.w	d5,d5
