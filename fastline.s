@@ -135,10 +135,11 @@ fl_vertical_ish:
 .positive_slope:	; d4 and d5 are positive delta-x and delta-y
 	swap.w	d4
 	clr.w	d4
+	asr.l	#1,d4
 	divs.w	d5,d4	; TODO: don't compute the slope for small lines
 	ext.l	d4
-	asl.l	#4,d4	; d4 is the Bresenham step for 16 pixels, stored as
-			; 16:16, with 12 significant fractional bits
+	asl.l	#5,d4	; d4 is the Bresenham step for 16 pixels, stored as
+			; 16:16, with 11 significant fractional bits
 
 	swap d0
 	move.w	#$7fff,d0
