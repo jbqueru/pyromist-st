@@ -169,50 +169,6 @@ clear_screen:
 	.endr
 	move.w	#0,$ffff8240.w
 
-	lea.l	scroller_text,a0
-	add.w	text_position,a0
-	move.l	back_buffer,a1
-
-	move.w	text_sub_position,d1
-
-	lea.l	font,a2
-	moveq.l	#0,d2
-	move.b	(a0)+,d2
-	sub.w	#32,d2
-	lsl.w	#5,d2
-	add.w	d2,a2
-	move	d1,d2
-	lsl.w	#1,d2
-	add.w	d2,a2
-
-	move.w	#199,d0
-
-.loop_text:
-	addq.w	#1,d1
-	cmp.w	#16,d1
-	bne.s	.draw_line
-	moveq.l	#0,d1
-	lea.l	font,a2
-	moveq.l	#0,d2
-	move.b	(a0)+,d2
-	sub.w	#32,d2
-	lsl.w	#5,d2
-	add.w	d2,a2
-.draw_line:
-	move.w	(a2)+,(a1)
-	add.w	#160,a1
-	dbra	d0,.loop_text
-
-	addq.w	#1,text_sub_position
-	cmp.w	#16,text_sub_position
-	bne.s	.done_scroll
-	clr.w	text_sub_position
-	addq.w	#1,text_position
-	cmp.w	#end_text-scroller_text,text_position
-	bne.s	.done_scroll
-	clr.w	text_position
-.done_scroll:
-
 	move.w	#240,d0
 	move.w	#100,d1
 	move.w	#240+36,d2
@@ -870,48 +826,7 @@ fl_bresenham_patterns:
 my_palette:
 	dc.w	0,$657,$741,$741,$275,$275,$275,$275,0,0,0,0,0,0,0,0
 
-font:
-	dc.w	%0000000000000000
-	dc.w	%0000000000000000
-	dc.w	%0000000000000000
-	dc.w	%0000000000000000
-	dc.w	%0000000000000000
-	dc.w	%0000000000000000
-	dc.w	%0000000000000000
-	dc.w	%0000000000000000
-	dc.w	%0000000000000000
-	dc.w	%0000000000000000
-	dc.w	%0000000000000000
-	dc.w	%0000000000000000
-	dc.w	%0000000000000000
-	dc.w	%0000000000000000
-	dc.w	%0000000000000000
-	dc.w	%0000000000000000
-
-	dc.w	%0000000000000000
-	dc.w	%0000001111000000
-	dc.w	%0000001111000000
-	dc.w	%0000001111000000
-	dc.w	%0000001111000000
-	dc.w	%0000001111000000
-	dc.w	%0000001111000000
-	dc.w	%0000001111000000
-	dc.w	%0000001111000000
-	dc.w	%0000001111000000
-	dc.w	%0000000000000000
-	dc.w	%0000001111000000
-	dc.w	%0000001111000000
-	dc.w	%0000001111000000
-	dc.w	%0000001111000000
-	dc.w	%0000000000000000
-
 	.include "sin_table_1024_32768.s"
-
-scroller_text:
-	dc.b	"              "
-	dc.b	"! ! !   !!! !!! !!!   ! ! !"
-end_text:
-	dc.b	"              "
 
 ; Uninitialized memory
 	.bss
