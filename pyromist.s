@@ -424,9 +424,11 @@ clear_screen:
 
 ; Clear current framebuffer to avoid flashing on exit
 	move.l	front_buffer,a0
+	move.l	back_buffer,a1
 	move.w	#7999,d0
 .clear_fb_exit:
 	clr.l	(a0)+
+	clr.l	(a1)+
 	dbra	d0,.clear_fb_exit
 
 ; Restore palette
@@ -446,12 +448,9 @@ clear_screen:
 
 vbl:
 	move.b	#1,vbl_reached
-	move.w	#0,raster_color
 	rte
 
 hbl:
-	add.w	#$71,raster_color
-	move.w	raster_color,$ffff8240.w
 	rte
 
 ; ===========================================================================
@@ -486,14 +485,6 @@ front_buffer:
 	ds.l	1
 back_buffer:
 	ds.l	1
-
-raster_color:
-	ds.w	1
-
-text_position:
-	ds.w	1
-text_sub_position:
-	ds.w	1
 
 line_end_x:
 	ds.w	1
