@@ -169,6 +169,8 @@ clear_screen:
 	.endr
 	move.w	#0,$ffff8240.w
 
+	bra	done_m_lines
+
 	move.w	#31,d0
 	move.w	#0,d1
 	move.w	#0,d2
@@ -241,6 +243,8 @@ clear_screen:
 	.endr
 	move.w	#0,$ffff8240.w
 
+done_m_lines:
+
 	move.w	#160,d0	; x1
 	move.w	#100,d1	; y1
 	move.w	line_end_x,d2	; x2
@@ -270,6 +274,14 @@ clear_screen:
 .top_side:
 	addq.w	#1,line_end_x
 .line_moved:
+
+	move.w	#$707,$ffff8240.w
+	.rept	124
+	nop
+	.endr
+	move.w	#0,$ffff8240.w
+
+	bra	done_square
 
 	movea.l	#sin_table_1024_32768,a0
 	move.w	square_rotation,d4
@@ -351,6 +363,171 @@ clear_screen:
 	.endr
 	move.w	#0,$ffff8240.w
 
+done_square:
+
+	lea.l	sin_table_1024_32768,a0
+
+	move.w	cube_rotation_y,d7
+	addi.w	#256,d7
+	andi.w	#1023,d7
+	add.w	d7,d7
+	move	(a0,d7.w),d0
+
+	move.w	cube_rotation_y,d7
+	add.w	d7,d7
+	move	(a0,d7.w),d1
+
+	move.w	cube_rotation_z,d7
+	addi.w	#256,d7
+	andi.w	#1023,d7
+	add.w	d7,d7
+	move	(a0,d7.w),d2
+
+	move.w	cube_rotation_z,d7
+	add.w	d7,d7
+	move	(a0,d7.w),d3
+
+; /  d0*d2  d1   d0*d3  \  _x
+; | -d1*d2  d0  -d1*d3  |  _y
+; \    -d3   0      d2  /  _z
+;       x_  y_      z_
+
+	move.w	d0,y_y
+	move.w	d1,y_x
+	move.w	d2,z_z
+
+	move.w	d0,d6
+	muls.w	d3,d6
+	swap.w	d6
+	add.w	d6,d6
+	move.w	d6,z_x
+
+	neg.w	d3
+	move.w	d3,x_z
+
+	muls.w	d1,d3
+	swap.w	d3
+	add.w	d3,d3
+	move.w	d3,z_y
+
+	muls.w	d2,d0
+	swap.w	d0
+	add.w	d0,d0
+	move.w	d0,x_x
+
+	muls.w	d2,d1
+	swap.w	d1
+	add.w	d1,d1
+	neg.w	d1
+	move.w	d1,x_y
+
+	move.w	#$770,$ffff8240.w
+	.rept	124
+	nop
+	.endr
+	move.w	#0,$ffff8240.w
+
+	move.w	#64,d4
+	move.w	d4,d5
+	move.w	d4,d6
+	muls.w	x_x,d4	; x*32k
+	asr.l	#8,d4	; x*128 (good for range -255..255)
+	muls.w	x_y,d5	; y*32k
+	asr.l	#8,d5	; y*128 (good for range -255..255)
+	muls.w	x_z,d6	; z*32k
+	asr.l	#8,d6	; z*128 (good for range -255..255)
+	asr.l	#7,d6	; z
+	add.w	#128,d6
+
+	move.l	d4,d0
+	divs.w	d6,d0
+	add.w	#160,d0
+	move.l	d5,d1
+	divs.w	d6,d1
+	add.w	#100,d1
+
+	move.w	#64,d4
+	move.w	d4,d5
+	move.w	d4,d6
+	muls.w	y_x,d4	; x*32k
+	asr.l	#8,d4	; x*128 (good for range -255..255)
+	muls.w	y_y,d5	; y*32k
+	asr.l	#8,d5	; y*128 (good for range -255..255)
+	muls.w	y_z,d6	; z*32k
+	asr.l	#8,d6	; z*128 (good for range -255..255)
+	asr.l	#7,d6	; z
+	add.w	#128,d6
+
+	move.l	d4,d2
+	divs.w	d6,d2
+	add.w	#160,d2
+	move.l	d5,d3
+	divs.w	d6,d3
+	add.w	#100,d3
+
+	bra.s	.ok_all
+
+	tst.w	d0
+	bpl.s	.ok1
+	clr.w	d0
+.ok1:
+	cmp.w	#319,d0
+	ble.s	.ok2
+	move.w	#319,d0
+.ok2:
+	tst.w	d1
+	bpl.s	.ok3
+	clr.w	d1
+.ok3:
+	cmp.w	#199,d1
+	ble.s	.ok4
+	move.w	#199,d1
+.ok4:
+	tst.w	d2
+	bpl.s	.ok5
+	clr.w	d2
+.ok5:
+	cmp.w	#319,d2
+	ble.s	.ok6
+	move.w	#319,d2
+.ok6:
+	tst.w	d3
+	bpl.s	.ok7
+	clr.w	d3
+.ok7:
+	cmp.w	#199,d3
+	ble.s	.ok8
+	move.w	#199,d3
+.ok8:
+.ok_all:
+
+	move.w	#$770,$ffff8240.w
+	.rept	124
+	nop
+	.endr
+	move.w	#0,$ffff8240.w
+
+	movea.l	back_buffer,a0
+	addq.l	#2,a0
+	bsr	draw_fast_line
+
+
+	move.w	cube_rotation_y,d0
+	addq.w	#5,d0
+	and.w	#1023,d0
+	move.w	d0,cube_rotation_y
+
+	move.w	cube_rotation_z,d0
+	addq.w	#3,d0
+	and.w	#1023,d0
+	move.w	d0,cube_rotation_z
+
+	move.w	#$770,$ffff8240.w
+	.rept	124
+	nop
+	.endr
+	move.w	#0,$ffff8240.w
+
 ; prototype 2D-texture-mapped polygon drawing
 
 	movea.l	#user_start,a0
@@ -371,7 +548,14 @@ clear_screen:
 
 	.endr
 
+	move.w	#$777,$ffff8240.w
+	.rept	124
+	nop
+	.endr
+	move.w	#0,$ffff8240.w
+
 ; Swap framebuffers
+; TODO: what if the VBL happens between the two writes?
 	move.l	back_buffer,d0
 	move.l	front_buffer,back_buffer
 	move.l	d0,front_buffer
@@ -379,12 +563,6 @@ clear_screen:
 	move.b	d0,$ffff8203.w
 	swap.w	d0
 	move.b	d0,$ffff8201.w
-
-	move.w	#$777,$ffff8240.w
-	.rept	124
-	nop
-	.endr
-	move.w	#0,$ffff8240.w
 
 ; Wait for next VBL
 	clr.b	vbl_reached
@@ -496,6 +674,30 @@ square_rotation:
 square_cos:
 	ds.w	1
 square_sin:
+	ds.w	1
+
+cube_rotation_y:
+	ds.w	1
+cube_rotation_z:
+	ds.w	1
+
+x_x:
+	ds.w	1
+x_y:
+	ds.w	1
+x_z:
+	ds.w	1
+y_x:
+	ds.w	1
+y_y:
+	ds.w	1
+y_z:
+	ds.w	1
+z_x:
+	ds.w	1
+z_y:
+	ds.w	1
+z_z:
 	ds.w	1
 
 save_sr:
