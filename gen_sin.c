@@ -36,9 +36,9 @@ int main() {
 		"\n"
 		"; This file is generated, do not modify. See gen_sin.c\n"
 		"\n");
-	printf("sin_table_1024_32768:\n\tdc.w ");
+	printf("sin_table_1024_16384:\n\tdc.w ");
 	for (i=0;i<1024;i++) {
-		printf("%d",(int)(32767*sin(2*M_PI*i/1024)));
+		printf("%d",(int)(16384*sin(2*M_PI*i/1024)));
 		if ((i&7)==7) {
 			printf("\n");
 			if (i!=1023) {
