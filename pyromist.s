@@ -365,7 +365,7 @@ done_m_lines:
 
 done_square:
 
-	lea.l	sin_table_1024_32768,a0
+	lea.l	sin_table_1024_16384,a0
 
 	move.w	cube_rotation_y,d7
 	addi.w	#256,d7
