@@ -427,6 +427,8 @@ done_square:
 	.endr
 	move.w	#0,$ffff8240.w
 
+	bra.s	.real_cube
+
 	move.w	#64,d4
 	move.w	d4,d5
 	move.w	d4,d6
@@ -435,14 +437,17 @@ done_square:
 	muls.w	x_y,d5	; y*32k
 	asr.l	#8,d5	; y*128 (good for range -255..255)
 	muls.w	x_z,d6	; z*32k
-	asr.l	#8,d6	; z*128 (good for range -255..255)
-	asr.l	#7,d6	; z
-	add.w	#128,d6
+	add.l	d6,d6	; z*64k
+	swap.w	d6	; z (in low 16 bits)
+	ext.l	d6	; z (in 32 bits)
 
 	move.l	d4,d0
+	move.l	d5,d1
+	move.l	d6,d7
+
+	add.w	#128,d6
 	divs.w	d6,d0
 	add.w	#160,d0
-	move.l	d5,d1
 	divs.w	d6,d1
 	add.w	#100,d1
 
@@ -454,8 +459,9 @@ done_square:
 	muls.w	y_y,d5	; y*32k
 	asr.l	#8,d5	; y*128 (good for range -255..255)
 	muls.w	y_z,d6	; z*32k
-	asr.l	#8,d6	; z*128 (good for range -255..255)
-	asr.l	#7,d6	; z
+	add.l	d6,d6	; z*64k
+	swap.w	d6	; z (in low 16 bits)
+	ext.l	d6	; z (in 32 bits)
 	add.w	#128,d6
 
 	move.l	d4,d2
@@ -465,41 +471,48 @@ done_square:
 	divs.w	d6,d3
 	add.w	#100,d3
 
-	bra.s	.ok_all
+.real_cube:
 
-	tst.w	d0
-	bpl.s	.ok1
-	clr.w	d0
-.ok1:
-	cmp.w	#319,d0
-	ble.s	.ok2
-	move.w	#319,d0
-.ok2:
-	tst.w	d1
-	bpl.s	.ok3
-	clr.w	d1
-.ok3:
-	cmp.w	#199,d1
-	ble.s	.ok4
-	move.w	#199,d1
-.ok4:
-	tst.w	d2
-	bpl.s	.ok5
-	clr.w	d2
-.ok5:
-	cmp.w	#319,d2
-	ble.s	.ok6
-	move.w	#319,d2
-.ok6:
-	tst.w	d3
-	bpl.s	.ok7
-	clr.w	d3
-.ok7:
-	cmp.w	#199,d3
-	ble.s	.ok8
-	move.w	#199,d3
-.ok8:
-.ok_all:
+	move.w	x_x,d0
+	muls.w	#64,d0
+	asr.l	#8,d0
+
+	move.w	x_y,d1
+	muls.w	#64,d1
+	asr.l	#8,d1
+
+	move.w	x_z,d4
+	muls.w	#64,d4
+	add.l	d4,d4
+	swap.w	d4
+	ext.l	d4
+	add.w	#128,d4
+	divs.w	d4,d0
+	add.w	#160,d0
+	divs.w	d4,d1
+	add.w	#100,d1
+
+
+	move.w	z_x,d2
+	muls.w	#64,d2
+	asr.l	#8,d2
+
+	move.w	z_y,d3
+	muls.w	#64,d3
+	asr.l	#8,d3
+
+	move.w	z_z,d4
+	muls.w	#64,d4
+	add.l	d4,d4
+	swap.w	d4
+	ext.l	d4
+	add.w	#128,d4
+	divs.w	d4,d2
+	add.w	#160,d2
+	divs.w	d4,d3
+	add.w	#100,d3
+
+
 
 	move.w	#$770,$ffff8240.w
 	.rept	124
