@@ -50,10 +50,6 @@ soup2:
 	move.w	sr,save_sr
 	move.w	#$2700,sr
 
-; Set up stack
-	move.l	sp,save_stack
-	lea.l	stack_top,sp
-
 ; Save palette, paint it black
 	lea.l	$ffff8240.w,a0
 	lea.l	save_palette,a1
@@ -105,6 +101,26 @@ soup2:
 	move.b	front_buffer+1,$ffff8201.w
 	move.b	front_buffer+2,$ffff8203.w
 
+; Set up threading system
+
+; Save stack
+	move.l	sp,save_stack
+
+	lea.l	main_thread_stack_top,sp
+	move.b	#1,main_thread_ready
+
+	lea.l	update_thread_stack_top,a0
+	move.l	#update_thread_entry,-(a0)	; PC
+	move.w	#$2300,-(a0)			; SR
+	suba.w	#64,a0				; D0-A6, USP
+	move.l	a0,update_thread_current_stack
+
+	lea.l	draw_thread_stack_top,a0
+	move.l	#draw_thread_entry,-(a0)	; PC
+	move.w	#$2300,-(a0)			; SR
+	suba.w	#64,a0				; D0-A6, USP
+	move.l	a0,draw_thread_current_stack
+
 ; Enable interrupts
 ;	move.b	#1,$fffffa07.w
 	move #$2300,sr
@@ -113,23 +129,31 @@ main_loop:
 
 ; Swap framebuffers
 ; TODO: what if the VBL happens between the two writes?
-	move.l	back_buffer,d0
-	move.l	front_buffer,back_buffer
-	move.l	d0,front_buffer
-	lsr.w	#8,d0
-	move.b	d0,$ffff8203.w
-	swap.w	d0
-	move.b	d0,$ffff8201.w
+;	move.l	back_buffer,d0
+;	move.l	front_buffer,back_buffer
+;	move.l	d0,front_buffer
+;	lsr.w	#8,d0
+;	move.b	d0,$ffff8203.w
+;	swap.w	d0
+;	move.b	d0,$ffff8201.w
 
 ; Wait for next VBL
-.waitvbl:
-	stop	#$2300
-	tst.b	vbl_reached
-	beq.s	.waitvbl
+;.waitvbl:
+;	stop	#$2300
+;	tst.b	vbl_reached
+;	beq.s	.waitvbl
+
+	move.w	#$007,$ffff8240.w
+	clr.w	$ffff8240.w
+
 ; Check for a keypress
 ; NOTE: would be good to do that with an interrupt handler, but I'm lazy
 	cmp.b	#$39,$fffffc02.w
 	beq.s	.exit
+
+	move.w	#$2700,sr
+	jsr	switch_threads
+
 	bra.s	main_loop
 .exit:
 
@@ -137,6 +161,9 @@ main_loop:
 	move.w	#$2700,sr
 	clr.b	$fffffa07.w
 	clr.b	$fffffa09.w
+
+; Restore stack
+	move.l	save_stack,sp
 
 ; Restore interrupt vectors
 	move.l	save_vbl,$70.w
@@ -173,9 +200,6 @@ main_loop:
 	move.w	(a1)+,(a0)+
 	dbra.w	d0,.restore_palette
 
-; Restore stack
-	move.l	save_stack,sp
-
 ; Restore status register, exit
 	move.w	save_sr,sr
 	rts
@@ -187,9 +211,21 @@ vbl:
 hbl:
 	rte
 
+switch_threads:
+	move.w	#$2300,-(sp)
+	rte
 
-; Initialized data
-	.data
+update_thread_entry:
+	move.w	#$2700,sr
+	clr.b	update_thread_ready
+	jsr	switch_threads
+	bra.s	update_thread_entry
+
+draw_thread_entry:
+	move.w	#$2700,sr
+	clr.b	draw_thread_ready
+	jsr	switch_threads
+	bra.s	draw_thread_entry
 
 ; Uninitialized memory
 	.bss
@@ -200,10 +236,6 @@ save_stack:
 save_hbl:
 	ds.l	1
 save_vbl:
-	ds.l	1
-front_buffer:
-	ds.l	1
-back_buffer:
 	ds.l	1
 
 save_sr:
@@ -232,13 +264,46 @@ save_fb_res:
 save_fb_sync:
 	ds.b	1
 
+	.even
+front_buffer:
+	ds.l	1
+back_buffer:
+	ds.l	1
+
+
 vbl_reached:
 	ds.b	1
 
 	.even
-stack_bottom:
+update_thread_current_stack:
+	ds.l	1
+update_thread_stack_bottom:
 	ds.b	1024
-stack_top:
+update_thread_stack_top:
+update_thread_ready:
+	ds.b	1
+
+	.even
+draw_thread_current_stack:
+	ds.l	1
+draw_thread_stack_bottom:
+	ds.b	1024
+draw_thread_stack_top:
+draw_thread_ready:
+	ds.b	1
+
+	.even
+main_thread_current_stack:
+	ds.l	1
+main_thread_stack_bottom:
+	ds.b	1024
+main_thread_stack_top:
+main_thread_ready:
+	ds.b	1
+
+	.even
+current_thread:
+	ds.l	1
 
 	.even
 raw_buffer:
