@@ -106,9 +106,6 @@ soup2:
 ; Save stack
 	move.l	sp,save_stack
 
-	lea.l	main_thread_stack_top,sp
-	move.b	#1,main_thread_ready
-
 	lea.l	update_thread_stack_top,a0
 	move.l	#update_thread_entry,-(a0)	; PC
 	move.w	#$2300,-(a0)			; SR
@@ -121,41 +118,14 @@ soup2:
 	suba.w	#64,a0				; D0-A6, USP
 	move.l	a0,draw_thread_current_stack
 
+	lea.l	main_thread_stack_top,sp
+	move.l	#main_thread_current_stack,current_thread
+
 ; Enable interrupts
 ;	move.b	#1,$fffffa07.w
 	move #$2300,sr
 
-main_loop:
-
-; Swap framebuffers
-; TODO: what if the VBL happens between the two writes?
-;	move.l	back_buffer,d0
-;	move.l	front_buffer,back_buffer
-;	move.l	d0,front_buffer
-;	lsr.w	#8,d0
-;	move.b	d0,$ffff8203.w
-;	swap.w	d0
-;	move.b	d0,$ffff8201.w
-
-; Wait for next VBL
-;.waitvbl:
-;	stop	#$2300
-;	tst.b	vbl_reached
-;	beq.s	.waitvbl
-
-	move.w	#$007,$ffff8240.w
-	clr.w	$ffff8240.w
-
-; Check for a keypress
-; NOTE: would be good to do that with an interrupt handler, but I'm lazy
-	cmp.b	#$39,$fffffc02.w
-	beq.s	.exit
-
-	move.w	#$2700,sr
-	jsr	switch_threads
-
-	bra.s	main_loop
-.exit:
+	jsr	main_thread_entry
 
 ; Disable interrupts
 	move.w	#$2700,sr
@@ -205,27 +175,75 @@ main_loop:
 	rts
 
 vbl:
-	move.b	#1,vbl_reached
-	rte
+	movem.l	d0-a6,-(sp)
+	move.l	usp,a0
+	move.l	a0,-(sp)
+	move.b	#1,update_thread_ready
+	bra.s	switch_and_return
 
 hbl:
 	rte
 
 switch_threads:
 	move.w	#$2300,-(sp)
+	movem.l	d0-a6,-(sp)
+	move.l	usp,a0
+	move.l	a0,-(sp)
+switch_and_return:
+	move.l	current_thread,a0
+	move.l	sp,(a0)
+.try_update_thread:
+	tst.b	update_thread_ready
+	beq.s	.try_draw_thread
+	lea.l	update_thread_current_stack,a0
+	bra.s	.thread_selected
+.try_draw_thread:
+	tst.b	draw_thread_ready
+	beq.s	.use_main_thread
+	lea.l	draw_thread_current_stack,a0
+	bra.s	.thread_selected
+.use_main_thread:
+	lea.l	main_thread_current_stack,a0
+.thread_selected:
+	move.l	(a0),sp
+	move.l	a0,current_thread
+	move.l	(sp)+,a0
+	move.l	a0,usp
+	movem.l	(sp)+,d0-a6
 	rte
 
 update_thread_entry:
+	.rept	1000
+	move.w	#$070,$ffff8240.w
+	clr.w	$ffff8240.w
+	.endr
 	move.w	#$2700,sr
+	move.b	#1,draw_thread_ready
 	clr.b	update_thread_ready
 	jsr	switch_threads
-	bra.s	update_thread_entry
+	jmp	update_thread_entry
 
 draw_thread_entry:
+	.rept	1000
+	move.w	#$700,$ffff8240.w
+	clr.w	$ffff8240.w
+	.endr
 	move.w	#$2700,sr
 	clr.b	draw_thread_ready
 	jsr	switch_threads
-	bra.s	draw_thread_entry
+	jmp	draw_thread_entry
+
+main_thread_entry:
+main_loop:
+	move.w	#$007,$ffff8240.w
+	clr.w	$ffff8240.w
+
+; Check for a keypress
+; NOTE: would be good to do that with an interrupt handler, but I'm lazy
+	cmp.b	#$39,$fffffc02.w
+	bne.s	main_loop
+	rts
+
 
 ; Uninitialized memory
 	.bss
@@ -270,10 +288,6 @@ front_buffer:
 back_buffer:
 	ds.l	1
 
-
-vbl_reached:
-	ds.b	1
-
 	.even
 update_thread_current_stack:
 	ds.l	1
@@ -298,8 +312,6 @@ main_thread_current_stack:
 main_thread_stack_bottom:
 	ds.b	1024
 main_thread_stack_top:
-main_thread_ready:
-	ds.b	1
 
 	.even
 current_thread:
