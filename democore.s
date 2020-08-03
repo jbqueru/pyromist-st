@@ -73,9 +73,10 @@ super_main2:
 ; Save enable status
 	move.b	$fffffa07.w,save_mfp_enable_a
 	move.b	$fffffa09.w,save_mfp_enable_b
+	move.b	$fffffa13.w,save_mfp_mask_a
+	move.b	$fffffa15.w,save_mfp_mask_b
 	move.b	$fffffa17.w,save_mfp_vector
 ; Save timers
-	move.b	$fffffa13.w,save_mfp_mask_a
 	move.b	$fffffa19.w,save_mfp_timer_a_control
 	move.b	$fffffa1f.w,save_mfp_timer_a_data	; ???
 	move.b	$fffffa1b.w,save_mfp_timer_b_control
@@ -83,6 +84,7 @@ super_main2:
 
 ; Save interrupt vectors
 	move.l	$70.w,save_vbl
+	move.l	$118.w,save_input
 	move.l	$120.w,save_hbl
 	move.l	$134.w,save_timer
 
@@ -92,8 +94,9 @@ super_main2:
 	move.b	#$40,$fffffa17.w
 
 ; Set up MFP timer B
-; Unmask timers a/b (this masks other unused ones as a side effect)
+; Unmask interrupts we use (this masks other unused ones as a side effect)
 	move.b	#$21,$fffffa13.w
+	move.b	#$40,$fffffa15.w
 ; Set timer a close to 50 Hz
 	clr.b	$fffffa19.w
 	move.b	#246,$fffffa1f.w
@@ -103,6 +106,7 @@ super_main2:
 
 ; Set our interrupt vectors
 	move.l	#empty_interrupt,$70.w
+	move.l	#empty_interrupt,$118.w
 	move.l	#empty_interrupt,$120.w
 	move.l	#empty_interrupt,$134.w
 
@@ -207,6 +211,7 @@ super_main2:
 
 ; Restore interrupt vectors
 	move.l	save_vbl,$70.w
+	move.l	save_input,$118.w
 	move.l	save_hbl,$120.w
 	move.l	save_timer,$134.w
 
@@ -216,6 +221,7 @@ super_main2:
 	move.b	save_mfp_timer_b_control,$fffffa1b.w
 	move.b	save_mfp_timer_b_data,$fffffa21.w
 	move.b	save_mfp_mask_a,$fffffa13.w
+	move.b	save_mfp_mask_b,$fffffa15.w
 	move.b	save_mfp_vector,$fffffa17.w
 	move.b	save_mfp_enable_a,$fffffa07.w
 	move.b	save_mfp_enable_b,$fffffa09.w
@@ -241,13 +247,28 @@ hbl_setup:
 	move.b	#198,$fffffa21.w
 	move.l	#hbl_setup2,$120.w
 	move.b	#7,$fffffa19.w
-	move.b	#$21,$fffffa07.w
 	move.l	#timer,$134.w
+	move.l	#input,$118.w
+	move.b	#$21,$fffffa07.w
+	move.b	#$40,$fffffa09.w
 	rte
 
 hbl_setup2:
 	move.b	#200,$fffffa21.w
 	move.l	#hbl,$120.w
+	rte
+
+input:
+	btst.b	#7,$fffffc00.w
+	beq	.done
+	btst.b	#0,$fffffc00.w
+	beq	.done
+	tst.b	$fffffc02.w
+	move.w	#$777,$ffff8240.w
+	.rept	124
+	nop
+	.endr
+.done:
 	rte
 
 timer:
@@ -350,6 +371,8 @@ save_timer:
 	ds.l	1
 save_hbl:
 	ds.l	1
+save_input:
+	ds.l	1
 save_vbl:
 	ds.l	1
 
@@ -363,6 +386,8 @@ save_mfp_enable_a:
 save_mfp_enable_b:
 	ds.b	1
 save_mfp_mask_a:
+	ds.b	1
+save_mfp_mask_b:
 	ds.b	1
 save_mfp_vector:
 	ds.b	1
