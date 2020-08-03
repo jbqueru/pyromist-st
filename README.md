@@ -114,9 +114,10 @@ allows to modify the thread state (block/unblock threads).
 
 The following threads are supported, in order from highest priority:
 
-1. Update thread. As a special thread, it gets unblocked at each VBL,
+1. Music thread. Running on a 50Hz timer, regardless of frame rate.
+2. Update thread. As a special thread, it gets unblocked at each VBL,
 and is expected to run in less than the duration of a frame.
-2. Draw thread. As a special thread, it is tied to the page-flipping
+3. Draw thread. As a special thread, it is tied to the page-flipping
 logic in the VBL itself.
-3. Background thread. Never expected to block, it uses all the leftover
+4. Background thread. Never expected to block, it uses all the leftover
 CPU time from the other thread. This is the main thread.
