@@ -12,29 +12,7 @@
 ;   See the License for the specific language governing permissions and
 ;   limitations under the License.
 
-; This comes very first, to surround all BSS in all files
-	.bss
-start_bss:
-
 	.text
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; Userland code. Entry point when invoked from the OS.
-;
-; 1. Invoke the actual demo code as a supervisor subroutine.
-; 2. Exit back to the OS when the supervisor subroutine returns.
-;;;;;;;;
-core_main_user:
-	; Invoke XBIOS(38,core_main_super_check) = Supexec
-	pea	core_main_super		; address of subroutine
-	move.w	#38,-(sp)		; 38 = Supexec
-	trap	#14			; 14 = XBIOS
-	addq.l	#6,sp			; pop parameters from the stack
-
-	; Invoke GEMDOS(0) = Pterm0
-	move.w	#0,-(sp)		; 0 = Pterm0
-	trap	#1			; 1 = GEMDOS
-	; Pterm0 returns to the calling process
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Start of supervisor code.
@@ -473,7 +451,3 @@ current_thread:
 	.even
 raw_buffer:
 	ds.b	32000*2+254
-
-; This comes very last, to surround all BSS in all files
-	.bss
-end_bss:
