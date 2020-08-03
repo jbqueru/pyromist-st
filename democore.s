@@ -69,7 +69,7 @@ core_main_super:
 ;;;;;;;;
 core_main:
 	; This has to come first, before anything gets saved to BSS
-	bsr	core_bss_clear
+	bsr.s	core_bss_clear
 
 	; Save stack
 	move.l	sp,save_stack
@@ -90,7 +90,7 @@ core_main:
 ; This is the actual start of the demo.
 ;;;;;;;;
 core_main_inner:
-	bsr	core_int_save_setup
+	bsr.s	core_int_save_setup
 	bsr	core_gfx_save_setup
 	bsr	core_thr_setup
 	bsr	core_int_enable
@@ -252,18 +252,12 @@ input:
 	rte
 
 timer:
-	movem.l	d0-a6,-(sp)
-	move.l	usp,a0
-	move.l	a0,-(sp)
 	move.b	#1,music_thread_ready
-	bra.s	switch_and_return
+	bra.s	switch_from_int
 
 hbl:
-	movem.l	d0-a6,-(sp)
-	move.l	usp,a0
-	move.l	a0,-(sp)
 	move.b	#1,update_thread_ready
-	bra.s	switch_and_return
+	bra.s	switch_from_int
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Set up thread
@@ -292,11 +286,18 @@ core_thr_setup:
 
 	rts
 
+switch_from_int:
+	movem.l	d0-a6,-(sp)
+	move.l	usp,a0
+	move.l	a0,-(sp)
+	bra.s	switch_and_return
+
 switch_threads:
 	move.w	#$2300,-(sp)
 	movem.l	d0-a6,-(sp)
 	move.l	usp,a0
 	move.l	a0,-(sp)
+
 switch_and_return:
 	move.l	current_thread,a0
 	move.l	sp,(a0)
@@ -333,7 +334,7 @@ music_thread_entry:
 	move.w	#$2700,sr
 	clr.b	music_thread_ready
 	jsr	switch_threads
-	jmp	music_thread_entry
+	bra	music_thread_entry
 
 update_thread_entry:
 	.rept	1000
@@ -344,7 +345,7 @@ update_thread_entry:
 	move.b	#1,draw_thread_ready
 	clr.b	update_thread_ready
 	jsr	switch_threads
-	jmp	update_thread_entry
+	bra	update_thread_entry
 
 draw_thread_entry:
 	.rept	1000
@@ -354,7 +355,7 @@ draw_thread_entry:
 	move.w	#$2700,sr
 	clr.b	draw_thread_ready
 	jsr	switch_threads
-	jmp	draw_thread_entry
+	bra	draw_thread_entry
 
 main_thread_entry:
 main_loop:
