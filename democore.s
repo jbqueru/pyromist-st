@@ -14,30 +14,46 @@
 
 	.text
 
-; This is the userland bootstrap code. Invoke the actual demo code as a
-; s(o)upervisor subroutine, and exit back to the OS when that returns
-user_start:
-	pea	soup
-	move.w	#38,-(sp)
-	trap	#14
-	addq.l	#6,sp
-	move.w	#0,-(sp)
-	trap	#1
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Userland code. Entry point when invoked from the OS.
+;
+; 1. Invoke the actual demo code as a supervisor subroutine.
+; 2. Exit back to the OS when the supervisor subroutine returns.
+;;;;;;;;
+user_main:
+	; Invoke XBIOS(38) = Supexec
+	pea	super_main	; address of subroutine
+	move.w	#38,-(sp)	; 38 = Supexec
+	trap	#14		; 14 = XBIOS
+	addq.l	#6,sp		; pop parameters from the stack
 
-; Start of supervisor code
-soup:
-; Check that we're in supervisor mode, on a color monitor, exit otherwise
+	; Invoke GEMDOS(0) = Pterm0
+	move.w	#0,-(sp)	; 0 = Pterm0
+	trap	#1		; 1 = GEMDOS
+	; Pterm0 returns to the calling process
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Start of supervisor code.
+;
+; 1. Check that we're in supervisor mode.
+; 2. Check that we're on a color monitor.
+; 3. Invoke real code if everything is fine.
+;;;;;;;;
+super_main:
 	move.w	sr,d0
-	btst.l	#13,d0
-	beq.s	.setup_wrong
-; TODO: try testing MFP I/O bit 7
-	btst.b	#1,$ffff8260.w ; bug in Hatari where this doesn't trigger?
-	beq.s	soup2
-.setup_wrong:
+	btst.l	#13,d0		; bit #13 of SR is supervisor ($2000)
+	beq.s	.exit		; bit not set = we're not in supervisor, exit
+	btst.b	#1,$ffff8260.w	; bit #1 of $8260.w is monochrome mode ($02)
+	bne.s	.exit		; bit set = we're in monochrome, exit
+	bsr.s	super_main2	; invoke inner code.
+.exit:
 	rts
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; This is the actual start of the demo
-soup2:
+;;;;;;;;
+super_main2:
+
 ; Clear BSS
 	lea.l	start_bss,a0
 	lea.l	end_bss,a1
@@ -49,48 +65,64 @@ soup2:
 ; Save status register, disable all interrupts
 	move.w	sr,save_sr
 	move.w	#$2700,sr
+; Save stack
+	move.l	sp,save_stack
+	lea.l	main_thread_stack_top,sp
 
-; Save palette, paint it black
+; Save MFP
+; Save enable status
+	move.b	$fffffa07.w,save_mfp_enable_a
+	move.b	$fffffa09.w,save_mfp_enable_b
+	move.b	$fffffa17.w,save_mfp_vector
+; Save timer B
+	move.b	$fffffa13.w,save_mfp_mask_a
+	move.b	$fffffa1b.w,save_mfp_timer_b_control
+	move.b	$fffffa21.w,save_mfp_timer_b_data	; ???
+
+; Save interrupt vectors
+	move.l	$70.w,save_vbl
+	move.l	$120.w,save_hbl
+
+; Disable all MFP interrupts, set auto-clear
+	clr.b	$fffffa07.w
+	clr.b	$fffffa09.w
+	move.b	#$40,$fffffa17.w
+
+; Set up MFP timer B
+; Unmask timer b (this masks other unused ones as a side effect)
+	move.b	#1,$fffffa13.w
+; Set the timer b to count events, to fire on every event
+	clr.b	$fffffa1b.w
+	move.b	#1,$fffffa21.w
+
+; Set our interrupt vectors
+	move.l	#empty_interrupt,$70.w
+	move.l	#empty_interrupt,$120.w
+
+; Save palette
 	lea.l	$ffff8240.w,a0
 	lea.l	save_palette,a1
 	moveq.l	#15,d0
 .copy_palette:
-	move.w	(a0),(a1)+
-	move.w	#0,(a0)+
+	move.w	(a0)+,(a1)+
 	dbra.w	d0,.copy_palette
 
-; Save and set graphics state. It's a European demo, 50Hz FTW
+; Save graphics state.
 	move.b	$ffff8260.w,save_fb_res
 	move.b	$ffff820a.w,save_fb_sync
 	move.b	$ffff8201.w,save_fb_high_addr
 	move.b	$ffff8203.w,save_fb_low_addr
+
+; Clear palette
+	lea.l	$ffff8240.w,a0
+	moveq.l	#15,d0
+.clear_palette:
+	clr.w	(a0)+
+	dbra.w	d0,.clear_palette
+
+; Set graphics state It's a European demo, 50Hz FTW
 	move.b	#0,$ffff8260.w
 	move.b	#2,$ffff820a.w
-
-; Save MFP enable status, disable all MFP interrupts, set auto-clear
-	move.b	$fffffa07.w,save_mfp_enable_a
-	clr.b	$fffffa07.w
-	move.b	$fffffa09.w,save_mfp_enable_b
-	clr.b	$fffffa09.w
-	move.b	$fffffa17.w,save_mfp_vector
-	move.b	#$40,$fffffa17.w
-
-; Save and set up MFP timer B
-; Unmask timer b (this masks other unused ones as a side effect)
-	move.b	$fffffa13.w,save_mfp_mask_a
-	move.b	#1,$fffffa13.w
-
-; Set the timer b to count events, to fire on every event
-	move.b	$fffffa1b.w,save_mfp_timer_b_control
-	move.b	#8,$fffffa1b.w
-	move.b	$fffffa21.w,save_mfp_timer_b_data
-	move.b	#1,$fffffa21.w
-
-; Save interrupt vectors, set ours
-	move.l	$70.w,save_vbl
-	move.l	$120.w,save_hbl
-	move.l	#empty_interrupt,$70.w
-	move.l	#empty_interrupt,$120.w
 
 ; Set up our framebuffers
 	move.l	#raw_buffer+255,d0
@@ -103,8 +135,6 @@ soup2:
 
 ; Set up threading system
 
-; Save stack
-	move.l	sp,save_stack
 
 	lea.l	update_thread_stack_top,a0
 	move.l	#update_thread_entry,-(a0)	; PC
@@ -118,7 +148,6 @@ soup2:
 	suba.w	#64,a0				; D0-A6, USP
 	move.l	a0,draw_thread_current_stack
 
-	lea.l	main_thread_stack_top,sp
 	move.l	#main_thread_current_stack,current_thread
 
 ; Sync interrupts
@@ -135,9 +164,34 @@ soup2:
 	move.w	#$2700,sr
 	clr.b	$fffffa07.w
 	clr.b	$fffffa09.w
+	move.l	#empty_interrupt,$70.w
 
-; Restore stack
-	move.l	save_stack,sp
+; Clear palette
+	lea.l	$ffff8240.w,a0
+	moveq.l	#15,d0
+.clear_palette2:
+	clr.w	(a0)+
+	dbra.w	d0,.clear_palette2
+
+	stop	#$2300
+	stop	#$2300
+; Restore graphics status
+	move.b	save_fb_sync,$ffff820a.w
+	move.b	save_fb_res,$ffff8260.w
+	move.b	save_fb_high_addr,$ffff8201.w
+	move.b	save_fb_low_addr,$ffff8203.w
+	stop	#$2300
+	move.w	#$2700,sr
+; Restore palette
+	lea.l	$ffff8240.w,a0
+	lea.l	save_palette,a1
+	moveq.l	#15,d0
+.restore_palette:
+	move.w	(a1)+,(a0)+
+	dbra.w	d0,.restore_palette
+
+
+
 
 ; Restore interrupt vectors
 	move.l	save_vbl,$70.w
@@ -151,29 +205,8 @@ soup2:
 	move.b	save_mfp_enable_a,$fffffa07.w
 	move.b	save_mfp_enable_b,$fffffa09.w
 
-; Restore graphics status
-	move.b	save_fb_sync,$ffff820a.w
-	move.b	save_fb_res,$ffff8260.w
-	move.b	save_fb_high_addr,$ffff8201.w
-	move.b	save_fb_low_addr,$ffff8203.w
-
-; Clear current framebuffer to avoid flashing on exit
-	move.l	front_buffer,a0
-	move.l	back_buffer,a1
-	move.w	#7999,d0
-.clear_fb_exit:
-	clr.l	(a0)+
-	clr.l	(a1)+
-	dbra	d0,.clear_fb_exit
-
-; Restore palette
-	lea.l	$ffff8240.w,a0
-	lea.l	save_palette,a1
-	moveq.l	#15,d0
-.restore_palette:
-	move.w	(a1)+,(a0)+
-	dbra.w	d0,.restore_palette
-
+; Restore stack
+	move.l	save_stack,sp
 ; Restore status register, exit
 	move.w	save_sr,sr
 	rts
@@ -183,6 +216,7 @@ empty_interrupt:
 
 vbl_setup:
 	move.b	#1,$fffffa07.w
+	move.b	#8,$fffffa1b.w
 	move.b	#1,$fffffa21.w
 	move.l	#hbl_setup,$120.w
 	move.l	#empty_interrupt,$70.w
