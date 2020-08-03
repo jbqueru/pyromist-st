@@ -90,7 +90,7 @@ core_main:
 ; This is the actual start of the demo.
 ;;;;;;;;
 core_main_inner:
-	bsr	core_int_save_setup	; from here, MFP off, VBL nop
+	bsr	core_int_save_setup	; MFP off, VBL/HBL nop, Int mask 3
 
 ; Save palette
 	lea.l	$ffff8240.w,a0
@@ -260,6 +260,7 @@ core_int_save_setup:
 	clr.b	$fffffa1b.w
 	move.b	#1,$fffffa21.w
 
+	stop	#$2300
 
 	rts
 
