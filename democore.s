@@ -90,27 +90,16 @@ core_main:
 ; This is the actual start of the demo.
 ;;;;;;;;
 core_main_inner:
-	bsr	core_int_save_setup	; MFP off, VBL/HBL nop, Int mask 3
+	bsr	core_int_save_setup
 	bsr	core_gfx_save_setup
 	bsr	core_thr_setup
+	bsr	core_int_enable
 
-; Sync interrupts
-	stop	#$2300
-	move.l	#vbl_setup,$70.w
-	stop	#$2300
-	stop	#$2500
-	stop	#$2500
+	bsr	main_thread_entry
 
-	jsr	main_thread_entry
-
-; Disable interrupts
-	move.w	#$2700,sr
-	clr.b	$fffffa07.w
-	clr.b	$fffffa09.w
-	move.l	#empty_interrupt,$70.w
-
+	bsr	core_int_disable
 	bsr	core_gfx_restore
-	bsr	core_int_restore	; restore interrupts
+	bsr	core_int_restore
 	rts
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -170,16 +159,53 @@ core_int_save_setup:
 
 ; Set up MFP timer B
 ; Unmask interrupts we use (this masks other unused ones as a side effect)
-	move.b	#$21,$fffffa13.w
-	move.b	#$40,$fffffa15.w
+	move.b	#$21,$fffffa13.w	; unmask timers A and B ($20 and $01)
+	move.b	#$40,$fffffa15.w	; unmask keyboard/midi
 ; Set timer a close to 50 Hz
-	clr.b	$fffffa19.w
-	move.b	#246,$fffffa1f.w
+	clr.b	$fffffa19.w		; timer A off
 ; Set the timer b to count events, to fire on every event
 	clr.b	$fffffa1b.w
 	move.b	#1,$fffffa21.w
 
+	stop	#$2300			; in case there's a spurious event
 	stop	#$2300
+
+	rts
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Enable and sync our interrupts
+;;;;;;;;
+core_int_enable:
+; Sync interrupts
+
+	stop	#$2300			; wait for VBL
+
+	move.b	#$1,$fffffa07.w		; enable timer B
+	move.b	#$8,$fffffa1b.w		; set timer B to count events
+	move.b	#199,$fffffa21.w	; count to the last line
+
+	stop	#$2300			; wait for last line
+
+	move.b	#200,$fffffa21.w	; count every 200 lines (= 1 screen)
+	move.l	#hbl,$120.w		; set up real interrupt routine
+
+	move.b	#$7,$fffffa19.w
+	move.b	#246,$fffffa1f.w	; timer A counts 246 events
+	move.l	#timer,$134.w
+	move.b	#$21,$fffffa07.w
+
+	move.l	#input,$118.w
+	move.b	#$40,$fffffa09.w
+
+	rts
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Disable our interrupts
+;;;;;;;;
+core_int_disable:
+; Disable MFP
+	clr.b	$fffffa07.w
+	clr.b	$fffffa09.w
 
 	rts
 
@@ -209,29 +235,6 @@ core_int_restore:
 	rts
 
 empty_interrupt:
-	rte
-
-vbl_setup:
-	move.b	#1,$fffffa07.w
-	move.b	#8,$fffffa1b.w
-	move.b	#1,$fffffa21.w
-	move.l	#hbl_setup,$120.w
-	move.l	#empty_interrupt,$70.w
-	rte
-
-hbl_setup:
-	move.b	#198,$fffffa21.w
-	move.l	#hbl_setup2,$120.w
-	move.b	#7,$fffffa19.w
-	move.l	#timer,$134.w
-	move.l	#input,$118.w
-	move.b	#$21,$fffffa07.w
-	move.b	#$40,$fffffa09.w
-	rte
-
-hbl_setup2:
-	move.b	#200,$fffffa21.w
-	move.l	#hbl,$120.w
 	rte
 
 input:
@@ -268,19 +271,19 @@ core_thr_setup:
 ; Set up threading system
 	lea.l	music_thread_stack_top,a0
 	move.l	#music_thread_entry,-(a0)	; PC
-	move.w	#$2500,-(a0)			; SR
+	move.w	#$2300,-(a0)			; SR
 	suba.w	#64,a0				; D0-A6, USP
 	move.l	a0,music_thread_current_stack
 
 	lea.l	update_thread_stack_top,a0
 	move.l	#update_thread_entry,-(a0)	; PC
-	move.w	#$2500,-(a0)			; SR
+	move.w	#$2300,-(a0)			; SR
 	suba.w	#64,a0				; D0-A6, USP
 	move.l	a0,update_thread_current_stack
 
 	lea.l	draw_thread_stack_top,a0
 	move.l	#draw_thread_entry,-(a0)	; PC
-	move.w	#$2500,-(a0)			; SR
+	move.w	#$2300,-(a0)			; SR
 	suba.w	#64,a0				; D0-A6, USP
 	move.l	a0,draw_thread_current_stack
 
@@ -289,7 +292,7 @@ core_thr_setup:
 	rts
 
 switch_threads:
-	move.w	#$2500,-(sp)
+	move.w	#$2300,-(sp)
 	movem.l	d0-a6,-(sp)
 	move.l	usp,a0
 	move.l	a0,-(sp)
@@ -441,6 +444,9 @@ core_gfx_restore:
 	.bss
 save_stack:
 	ds.l	1
+save_sr:
+	ds.w	1
+
 save_timer_a:
 	ds.l	1
 save_timer_b:
@@ -451,11 +457,6 @@ save_vbl:
 	ds.l	1
 save_hbl:
 	ds.l	1
-
-save_sr:
-	ds.w	1
-save_palette:
-	ds.w	16
 
 save_mfp_enable_a:
 	ds.b	1
@@ -475,6 +476,10 @@ save_mfp_timer_a_control:
 	ds.b	1
 save_mfp_timer_a_data:
 	ds.b	1
+
+	.even
+save_palette:
+	ds.w	16
 save_fb_low_addr:
 	ds.b	1
 save_fb_high_addr:
