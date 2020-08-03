@@ -74,14 +74,17 @@ super_main2:
 	move.b	$fffffa07.w,save_mfp_enable_a
 	move.b	$fffffa09.w,save_mfp_enable_b
 	move.b	$fffffa17.w,save_mfp_vector
-; Save timer B
+; Save timers
 	move.b	$fffffa13.w,save_mfp_mask_a
+	move.b	$fffffa19.w,save_mfp_timer_a_control
+	move.b	$fffffa1f.w,save_mfp_timer_a_data	; ???
 	move.b	$fffffa1b.w,save_mfp_timer_b_control
 	move.b	$fffffa21.w,save_mfp_timer_b_data	; ???
 
 ; Save interrupt vectors
 	move.l	$70.w,save_vbl
 	move.l	$120.w,save_hbl
+	move.l	$134.w,save_timer
 
 ; Disable all MFP interrupts, set auto-clear
 	clr.b	$fffffa07.w
@@ -89,8 +92,11 @@ super_main2:
 	move.b	#$40,$fffffa17.w
 
 ; Set up MFP timer B
-; Unmask timer b (this masks other unused ones as a side effect)
-	move.b	#1,$fffffa13.w
+; Unmask timers a/b (this masks other unused ones as a side effect)
+	move.b	#$21,$fffffa13.w
+; Set timer a close to 50 Hz
+	clr.b	$fffffa19.w
+	move.b	#246,$fffffa1f.w
 ; Set the timer b to count events, to fire on every event
 	clr.b	$fffffa1b.w
 	move.b	#1,$fffffa21.w
@@ -98,6 +104,7 @@ super_main2:
 ; Set our interrupt vectors
 	move.l	#empty_interrupt,$70.w
 	move.l	#empty_interrupt,$120.w
+	move.l	#empty_interrupt,$134.w
 
 ; Save palette
 	lea.l	$ffff8240.w,a0
@@ -196,8 +203,11 @@ super_main2:
 ; Restore interrupt vectors
 	move.l	save_vbl,$70.w
 	move.l	save_hbl,$120.w
+	move.l	save_timer,$134.w
 
 ; Restore MFP status
+	move.b	save_mfp_timer_a_control,$fffffa19.w
+	move.b	save_mfp_timer_a_data,$fffffa1f.w
 	move.b	save_mfp_timer_b_control,$fffffa1b.w
 	move.b	save_mfp_timer_b_data,$fffffa21.w
 	move.b	save_mfp_mask_a,$fffffa13.w
@@ -225,11 +235,22 @@ vbl_setup:
 hbl_setup:
 	move.b	#198,$fffffa21.w
 	move.l	#hbl_setup2,$120.w
+	move.b	#7,$fffffa19.w
+	move.b	#$21,$fffffa07.w
+	move.l	#timer,$134.w
 	rte
 
 hbl_setup2:
 	move.b	#200,$fffffa21.w
 	move.l	#hbl,$120.w
+	rte
+
+timer:
+	move.w	#$777,$ffff8240.w
+	.rept 124
+	nop
+	.endr
+	clr.w	$ffff8240.w
 	rte
 
 hbl:
@@ -306,6 +327,8 @@ start_bss:
 
 save_stack:
 	ds.l	1
+save_timer:
+	ds.l	1
 save_hbl:
 	ds.l	1
 save_vbl:
@@ -327,6 +350,10 @@ save_mfp_vector:
 save_mfp_timer_b_control:
 	ds.b	1
 save_mfp_timer_b_data:
+	ds.b	1
+save_mfp_timer_a_control:
+	ds.b	1
+save_mfp_timer_a_data:
 	ds.b	1
 save_fb_low_addr:
 	ds.b	1
