@@ -213,6 +213,7 @@ core_int_disable:
 ; Restore interrupts
 ;;;;;;;;
 core_int_restore:
+	move.w	#$2700,sr
 ; Restore interrupt vectors
 	move.l	save_hbl,$68.w
 	move.l	save_vbl,$70.w
@@ -412,6 +413,7 @@ core_gfx_save_setup:
 ; Restore graphics
 ;;;;;;;;
 core_gfx_restore:
+	stop	#$2300
 ; Clear palette
 	lea.l	$ffff8240.w,a0
 	moveq.l	#15,d0
@@ -419,15 +421,12 @@ core_gfx_restore:
 	clr.w	(a0)+
 	dbra.w	d0,.clear_palette2
 
-	stop	#$2300
-	stop	#$2300
 ; Restore graphics status
 	move.b	save_fb_sync,$ffff820a.w
 	move.b	save_fb_res,$ffff8260.w
 	move.b	save_fb_high_addr,$ffff8201.w
 	move.b	save_fb_low_addr,$ffff8203.w
 	stop	#$2300
-	move.w	#$2700,sr
 ; Restore palette
 	lea.l	$ffff8240.w,a0
 	lea.l	save_palette,a1
