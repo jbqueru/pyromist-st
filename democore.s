@@ -91,40 +91,8 @@ core_main:
 ;;;;;;;;
 core_main_inner:
 	bsr	core_int_save_setup	; MFP off, VBL/HBL nop, Int mask 3
+	bsr	core_gfx_save_setup
 
-; Save palette
-	lea.l	$ffff8240.w,a0
-	lea.l	save_palette,a1
-	moveq.l	#15,d0
-.copy_palette:
-	move.w	(a0)+,(a1)+
-	dbra.w	d0,.copy_palette
-
-; Save graphics state.
-	move.b	$ffff8260.w,save_fb_res
-	move.b	$ffff820a.w,save_fb_sync
-	move.b	$ffff8201.w,save_fb_high_addr
-	move.b	$ffff8203.w,save_fb_low_addr
-
-; Clear palette
-	lea.l	$ffff8240.w,a0
-	moveq.l	#15,d0
-.clear_palette:
-	clr.w	(a0)+
-	dbra.w	d0,.clear_palette
-
-; Set graphics state It's a European demo, 50Hz FTW
-	move.b	#0,$ffff8260.w
-	move.b	#2,$ffff820a.w
-
-; Set up our framebuffers
-	move.l	#raw_buffer+255,d0
-	clr.b	d0
-	move.l	d0,back_buffer
-	add.l	#32000,d0
-	move.l	d0,front_buffer
-	move.b	front_buffer+1,$ffff8201.w
-	move.b	front_buffer+2,$ffff8203.w
 
 ; Set up threading system
 
@@ -164,33 +132,7 @@ core_main_inner:
 	clr.b	$fffffa09.w
 	move.l	#empty_interrupt,$70.w
 
-; Clear palette
-	lea.l	$ffff8240.w,a0
-	moveq.l	#15,d0
-.clear_palette2:
-	clr.w	(a0)+
-	dbra.w	d0,.clear_palette2
-
-	stop	#$2300
-	stop	#$2300
-; Restore graphics status
-	move.b	save_fb_sync,$ffff820a.w
-	move.b	save_fb_res,$ffff8260.w
-	move.b	save_fb_high_addr,$ffff8201.w
-	move.b	save_fb_low_addr,$ffff8203.w
-	stop	#$2300
-	move.w	#$2700,sr
-; Restore palette
-	lea.l	$ffff8240.w,a0
-	lea.l	save_palette,a1
-	moveq.l	#15,d0
-.restore_palette:
-	move.w	(a1)+,(a0)+
-	dbra.w	d0,.restore_palette
-
-
-
-
+	bsr	core_gfx_restore
 	bsr	core_int_restore	; restore interrupts
 	rts
 
@@ -416,6 +358,78 @@ main_loop:
 	cmp.b	#$39,$fffffc02.w
 	bne.s	main_loop
 	rts
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Save and set up graphics
+;;;;;;;;
+core_gfx_save_setup:
+; Save palette
+	lea.l	$ffff8240.w,a0
+	lea.l	save_palette,a1
+	moveq.l	#15,d0
+.copy_palette:
+	move.w	(a0)+,(a1)+
+	dbra.w	d0,.copy_palette
+
+; Save graphics state.
+	move.b	$ffff8260.w,save_fb_res
+	move.b	$ffff820a.w,save_fb_sync
+	move.b	$ffff8201.w,save_fb_high_addr
+	move.b	$ffff8203.w,save_fb_low_addr
+
+; Set up our framebuffers
+	move.l	#raw_buffer+255,d0
+	clr.b	d0
+	move.l	d0,back_buffer
+	add.l	#32000,d0
+	move.l	d0,front_buffer
+	move.b	front_buffer+1,$ffff8201.w
+	move.b	front_buffer+2,$ffff8203.w
+
+	stop	#$2300
+
+; Set graphics state It's a European demo, 50Hz FTW
+	move.b	#0,$ffff8260.w
+	move.b	#2,$ffff820a.w
+
+; Clear palette
+	lea.l	$ffff8240.w,a0
+	moveq.l	#15,d0
+.clear_palette:
+	clr.w	(a0)+
+	dbra.w	d0,.clear_palette
+
+	rts
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Restore graphics
+;;;;;;;;
+core_gfx_restore:
+; Clear palette
+	lea.l	$ffff8240.w,a0
+	moveq.l	#15,d0
+.clear_palette2:
+	clr.w	(a0)+
+	dbra.w	d0,.clear_palette2
+
+	stop	#$2300
+	stop	#$2300
+; Restore graphics status
+	move.b	save_fb_sync,$ffff820a.w
+	move.b	save_fb_res,$ffff8260.w
+	move.b	save_fb_high_addr,$ffff8201.w
+	move.b	save_fb_low_addr,$ffff8203.w
+	stop	#$2300
+	move.w	#$2700,sr
+; Restore palette
+	lea.l	$ffff8240.w,a0
+	lea.l	save_palette,a1
+	moveq.l	#15,d0
+.restore_palette:
+	move.w	(a1)+,(a0)+
+	dbra.w	d0,.restore_palette
+	rts
+
 
 
 ; Uninitialized memory
