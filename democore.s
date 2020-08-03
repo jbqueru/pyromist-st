@@ -143,6 +143,12 @@ super_main2:
 ; Set up threading system
 
 
+	lea.l	music_thread_stack_top,a0
+	move.l	#music_thread_entry,-(a0)	; PC
+	move.w	#$2500,-(a0)			; SR
+	suba.w	#64,a0				; D0-A6, USP
+	move.l	a0,music_thread_current_stack
+
 	lea.l	update_thread_stack_top,a0
 	move.l	#update_thread_entry,-(a0)	; PC
 	move.w	#$2500,-(a0)			; SR
@@ -158,7 +164,6 @@ super_main2:
 	move.l	#main_thread_current_stack,current_thread
 
 ; Sync interrupts
-	stop	#$2300
 	stop	#$2300
 	move.l	#vbl_setup,$70.w
 	stop	#$2300
@@ -246,12 +251,11 @@ hbl_setup2:
 	rte
 
 timer:
-	move.w	#$777,$ffff8240.w
-	.rept 124
-	nop
-	.endr
-	clr.w	$ffff8240.w
-	rte
+	movem.l	d0-a6,-(sp)
+	move.l	usp,a0
+	move.l	a0,-(sp)
+	move.b	#1,music_thread_ready
+	bra.s	switch_and_return
 
 hbl:
 	movem.l	d0-a6,-(sp)
@@ -268,6 +272,11 @@ switch_threads:
 switch_and_return:
 	move.l	current_thread,a0
 	move.l	sp,(a0)
+.try_music_thread:
+	tst.b	music_thread_ready
+	beq.s	.try_update_thread
+	lea.l	music_thread_current_stack,a0
+	bra.s	.thread_selected
 .try_update_thread:
 	tst.b	update_thread_ready
 	beq.s	.try_draw_thread
@@ -287,6 +296,16 @@ switch_and_return:
 	move.l	a0,usp
 	movem.l	(sp)+,d0-a6
 	rte
+
+music_thread_entry:
+	.rept	1000
+	move.w	#$770,$ffff8240.w
+	clr.w	$ffff8240.w
+	.endr
+	move.w	#$2700,sr
+	clr.b	music_thread_ready
+	jsr	switch_threads
+	jmp	music_thread_entry
 
 update_thread_entry:
 	.rept	1000
@@ -369,6 +388,15 @@ front_buffer:
 	ds.l	1
 back_buffer:
 	ds.l	1
+
+	.even
+music_thread_current_stack:
+	ds.l	1
+music_thread_stack_bottom:
+	ds.b	1024
+music_thread_stack_top:
+music_thread_ready:
+	ds.b	1
 
 	.even
 update_thread_current_stack:
