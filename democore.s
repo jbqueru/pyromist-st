@@ -12,6 +12,20 @@
 ;   See the License for the specific language governing permissions and
 ;   limitations under the License.
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;                                                                       ;;;
+;;; This is the kernel of the demo                                        ;;;
+;;; This includes:                                                        ;;;
+;;;   * Machine setup                                                     ;;;
+;;;   * Interrupts                                                        ;;;
+;;;   * Threading                                                         ;;;
+;;;   * Inputs                                                            ;;;
+;;;   * Page flipping                                                     ;;;
+;;;                                                                       ;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 	.text
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -20,76 +34,63 @@
 ; 1. Check that we're in supervisor mode.
 ; 2. Check that we're on a color monitor.
 ; 3. Invoke real code if everything is fine.
+;
+; This routine doesn't change any state. Therefore, if we trust everything
+; to be set up correctly, it can be skipped in theory.
+;
+; TODO: investigate whether to check the MFP pin for monochrome monitor.
 ;;;;;;;;
 core_main_super:
 	; Check for supervisor mode
 	move.w	sr,d0
-	btst.l	#13,d0			; bit #13 of SR is supervisor ($2000)
-	beq.s	.exit			; bit = 0 : we're not in supervisor, exit
+	btst.l	#13,d0		; bit #13 of SR is supervisor ($2000)
+	beq.s	.exit		; bit = 0 : we're not in supervisor, exit
 
 	; Check for color monitor
-	btst.b	#1,$ffff8260.w		; bit #1 of $8260.w is monochrome mode ($02)
-	bne.s	.exit			; bit != 0 : we're in monochrome, exit
+	btst.b	#1,$ffff8260.w	; bit #1 of $8260.w is monochrome mode ($02)
+	bne.s	.exit		; bit != 0 : we're in monochrome, exit
 
-	bsr.s	core_main		; invoke inner code.
+	bsr.s	core_main	; invoke inner code.
 .exit:
 	rts
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; This is the actual start of the demo
+; True entry point of the demo code.
+; This is the first active code that is used in all environments.
+;
+; 1. Clear BSS.
+; 2. Set up stack.
+; 3. Invoke inner code.
+; 4. Restore stack.
+;
+; The stack setup is difficult to separate in subroutines.
+; Note: this routine assumes that there's already enough stack set up to
+; invoke a subroutine.
 ;;;;;;;;
 core_main:
-
-; Clear BSS. This comes first, before we save anything to BSS.
+	; This has to come first, before anything gets saved to BSS
 	bsr	core_bss_clear
 
-; Save status register, disable all interrupts
-	move.w	sr,save_sr
-	move.w	#$2700,sr
-; Save stack
+	; Save stack
 	move.l	sp,save_stack
+
+	; Set up our stack
 	lea.l	main_thread_stack_top,sp
 
-; Save MFP
-; Save enable status
-	move.b	$fffffa07.w,save_mfp_enable_a
-	move.b	$fffffa09.w,save_mfp_enable_b
-	move.b	$fffffa13.w,save_mfp_mask_a
-	move.b	$fffffa15.w,save_mfp_mask_b
-	move.b	$fffffa17.w,save_mfp_vector
-; Save timers
-	move.b	$fffffa19.w,save_mfp_timer_a_control
-	move.b	$fffffa1f.w,save_mfp_timer_a_data	; ???
-	move.b	$fffffa1b.w,save_mfp_timer_b_control
-	move.b	$fffffa21.w,save_mfp_timer_b_data	; ???
+	; Invoke real code
+	bsr.s	core_main_inner
 
-; Save interrupt vectors
-	move.l	$70.w,save_vbl
-	move.l	$118.w,save_input
-	move.l	$120.w,save_hbl
-	move.l	$134.w,save_timer
+	; Restore stack
+	move.l	save_stack,sp
 
-; Disable all MFP interrupts, set auto-clear
-	clr.b	$fffffa07.w
-	clr.b	$fffffa09.w
-	move.b	#$40,$fffffa17.w
+	; Exit
+	rts
 
-; Set up MFP timer B
-; Unmask interrupts we use (this masks other unused ones as a side effect)
-	move.b	#$21,$fffffa13.w
-	move.b	#$40,$fffffa15.w
-; Set timer a close to 50 Hz
-	clr.b	$fffffa19.w
-	move.b	#246,$fffffa1f.w
-; Set the timer b to count events, to fire on every event
-	clr.b	$fffffa1b.w
-	move.b	#1,$fffffa21.w
-
-; Set our interrupt vectors
-	move.l	#empty_interrupt,$70.w
-	move.l	#empty_interrupt,$118.w
-	move.l	#empty_interrupt,$120.w
-	move.l	#empty_interrupt,$134.w
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; This is the actual start of the demo.
+;;;;;;;;
+core_main_inner:
+	bsr	core_int_save_setup	; from here, MFP off, VBL nop
 
 ; Save palette
 	lea.l	$ffff8240.w,a0
@@ -190,11 +191,88 @@ core_main:
 
 
 
+	bsr	core_int_restore	; restore interrupts
+	rts
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Clear the BSS
+;
+; Caution: this makes assumptions about the way source files are organized,
+;	all included source files must be between start_bss and end_bss
+;;;;;;;;
+core_bss_clear:
+	lea.l	start_bss,a0
+	lea.l	end_bss,a1
+.clear_bss:
+	clr.b	(a0)+
+	cmp.l	a0,a1
+	bne.s	.clear_bss
+	rts
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Save and set up interrupts
+;;;;;;;;
+core_int_save_setup:
+	move.w	sr,save_sr
+	move.w	#$2700,sr
+
+; Save MFP
+; Save enable status
+	move.b	$fffffa07.w,save_mfp_enable_a
+	move.b	$fffffa09.w,save_mfp_enable_b
+	move.b	$fffffa13.w,save_mfp_mask_a
+	move.b	$fffffa15.w,save_mfp_mask_b
+	move.b	$fffffa17.w,save_mfp_vector
+; Save timers
+	move.b	$fffffa19.w,save_mfp_timer_a_control
+	move.b	$fffffa1f.w,save_mfp_timer_a_data	; ???
+	move.b	$fffffa1b.w,save_mfp_timer_b_control
+	move.b	$fffffa21.w,save_mfp_timer_b_data	; ???
+
+; Disable all MFP interrupts, set auto-clear
+	clr.b	$fffffa07.w
+	clr.b	$fffffa09.w
+	move.b	#$40,$fffffa17.w
+
+; Save interrupt vectors
+	move.l	$68.w,save_hbl
+	move.l	$70.w,save_vbl
+	move.l	$118.w,save_input
+	move.l	$120.w,save_timer_b
+	move.l	$134.w,save_timer_a
+
+; Set our interrupt vectors
+	lea.l	empty_interrupt,a0
+	move.l	a0,$68.w
+	move.l	a0,$70.w
+	move.l	a0,$118.w
+	move.l	a0,$120.w
+	move.l	a0,$134.w
+
+; Set up MFP timer B
+; Unmask interrupts we use (this masks other unused ones as a side effect)
+	move.b	#$21,$fffffa13.w
+	move.b	#$40,$fffffa15.w
+; Set timer a close to 50 Hz
+	clr.b	$fffffa19.w
+	move.b	#246,$fffffa1f.w
+; Set the timer b to count events, to fire on every event
+	clr.b	$fffffa1b.w
+	move.b	#1,$fffffa21.w
+
+
+	rts
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Restore interrupts
+;;;;;;;;
+core_int_restore:
 ; Restore interrupt vectors
+	move.l	save_hbl,$68.w
 	move.l	save_vbl,$70.w
 	move.l	save_input,$118.w
-	move.l	save_hbl,$120.w
-	move.l	save_timer,$134.w
+	move.l	save_timer_b,$120.w
+	move.l	save_timer_a,$134.w
 
 ; Restore MFP status
 	move.b	save_mfp_timer_a_control,$fffffa19.w
@@ -207,26 +285,7 @@ core_main:
 	move.b	save_mfp_enable_a,$fffffa07.w
 	move.b	save_mfp_enable_b,$fffffa09.w
 
-; Restore stack
-	move.l	save_stack,sp
-; Restore status register, exit
 	move.w	save_sr,sr
-	rts
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; Clear the BSS
-;
-; Caution: this makes assumptions about the way source files are organized,
-;	all included source files must be between start_bss and end_bss
-;;;;;;;;
-
-core_bss_clear:
-	lea.l	start_bss,a0
-	lea.l	end_bss,a1
-.clear_bss:
-	clr.b	(a0)+
-	cmp.l	a0,a1
-	bne.s	.clear_bss
 	rts
 
 empty_interrupt:
@@ -363,13 +422,15 @@ main_loop:
 	.bss
 save_stack:
 	ds.l	1
-save_timer:
+save_timer_a:
 	ds.l	1
-save_hbl:
+save_timer_b:
 	ds.l	1
 save_input:
 	ds.l	1
 save_vbl:
+	ds.l	1
+save_hbl:
 	ds.l	1
 
 save_sr:
@@ -448,6 +509,5 @@ main_thread_stack_top:
 current_thread:
 	ds.l	1
 
-	.even
 raw_buffer:
-	ds.b	32000*2+254
+	ds.b	32000*2+255
