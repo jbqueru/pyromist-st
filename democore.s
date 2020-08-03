@@ -92,30 +92,7 @@ core_main:
 core_main_inner:
 	bsr	core_int_save_setup	; MFP off, VBL/HBL nop, Int mask 3
 	bsr	core_gfx_save_setup
-
-
-; Set up threading system
-
-
-	lea.l	music_thread_stack_top,a0
-	move.l	#music_thread_entry,-(a0)	; PC
-	move.w	#$2500,-(a0)			; SR
-	suba.w	#64,a0				; D0-A6, USP
-	move.l	a0,music_thread_current_stack
-
-	lea.l	update_thread_stack_top,a0
-	move.l	#update_thread_entry,-(a0)	; PC
-	move.w	#$2500,-(a0)			; SR
-	suba.w	#64,a0				; D0-A6, USP
-	move.l	a0,update_thread_current_stack
-
-	lea.l	draw_thread_stack_top,a0
-	move.l	#draw_thread_entry,-(a0)	; PC
-	move.w	#$2500,-(a0)			; SR
-	suba.w	#64,a0				; D0-A6, USP
-	move.l	a0,draw_thread_current_stack
-
-	move.l	#main_thread_current_stack,current_thread
+	bsr	core_thr_setup
 
 ; Sync interrupts
 	stop	#$2300
@@ -283,6 +260,33 @@ hbl:
 	move.l	a0,-(sp)
 	move.b	#1,update_thread_ready
 	bra.s	switch_and_return
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Set up thread
+;;;;;;;;
+core_thr_setup:
+; Set up threading system
+	lea.l	music_thread_stack_top,a0
+	move.l	#music_thread_entry,-(a0)	; PC
+	move.w	#$2500,-(a0)			; SR
+	suba.w	#64,a0				; D0-A6, USP
+	move.l	a0,music_thread_current_stack
+
+	lea.l	update_thread_stack_top,a0
+	move.l	#update_thread_entry,-(a0)	; PC
+	move.w	#$2500,-(a0)			; SR
+	suba.w	#64,a0				; D0-A6, USP
+	move.l	a0,update_thread_current_stack
+
+	lea.l	draw_thread_stack_top,a0
+	move.l	#draw_thread_entry,-(a0)	; PC
+	move.w	#$2500,-(a0)			; SR
+	suba.w	#64,a0				; D0-A6, USP
+	move.l	a0,draw_thread_current_stack
+
+	move.l	#main_thread_current_stack,current_thread
+
+	rts
 
 switch_threads:
 	move.w	#$2500,-(sp)
