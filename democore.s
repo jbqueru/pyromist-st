@@ -89,8 +89,8 @@ soup2:
 ; Save interrupt vectors, set ours
 	move.l	$70.w,save_vbl
 	move.l	$120.w,save_hbl
-	move.l	#vbl,$70.w
-	move.l	#hbl,$120.w
+	move.l	#empty_interrupt,$70.w
+	move.l	#empty_interrupt,$120.w
 
 ; Set up our framebuffers
 	move.l	#raw_buffer+255,d0
@@ -108,22 +108,26 @@ soup2:
 
 	lea.l	update_thread_stack_top,a0
 	move.l	#update_thread_entry,-(a0)	; PC
-	move.w	#$2300,-(a0)			; SR
+	move.w	#$2500,-(a0)			; SR
 	suba.w	#64,a0				; D0-A6, USP
 	move.l	a0,update_thread_current_stack
 
 	lea.l	draw_thread_stack_top,a0
 	move.l	#draw_thread_entry,-(a0)	; PC
-	move.w	#$2300,-(a0)			; SR
+	move.w	#$2500,-(a0)			; SR
 	suba.w	#64,a0				; D0-A6, USP
 	move.l	a0,draw_thread_current_stack
 
 	lea.l	main_thread_stack_top,sp
 	move.l	#main_thread_current_stack,current_thread
 
-; Enable interrupts
-;	move.b	#1,$fffffa07.w
-	move #$2300,sr
+; Sync interrupts
+	stop	#$2300
+	stop	#$2300
+	move.l	#vbl_setup,$70.w
+	stop	#$2300
+	stop	#$2500
+	stop	#$2500
 
 	jsr	main_thread_entry
 
@@ -174,18 +178,35 @@ soup2:
 	move.w	save_sr,sr
 	rts
 
-vbl:
+empty_interrupt:
+	rte
+
+vbl_setup:
+	move.b	#1,$fffffa07.w
+	move.b	#1,$fffffa21.w
+	move.l	#hbl_setup,$120.w
+	move.l	#empty_interrupt,$70.w
+	rte
+
+hbl_setup:
+	move.b	#198,$fffffa21.w
+	move.l	#hbl_setup2,$120.w
+	rte
+
+hbl_setup2:
+	move.b	#200,$fffffa21.w
+	move.l	#hbl,$120.w
+	rte
+
+hbl:
 	movem.l	d0-a6,-(sp)
 	move.l	usp,a0
 	move.l	a0,-(sp)
 	move.b	#1,update_thread_ready
 	bra.s	switch_and_return
 
-hbl:
-	rte
-
 switch_threads:
-	move.w	#$2300,-(sp)
+	move.w	#$2500,-(sp)
 	movem.l	d0-a6,-(sp)
 	move.l	usp,a0
 	move.l	a0,-(sp)
