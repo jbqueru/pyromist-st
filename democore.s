@@ -12,6 +12,10 @@
 ;   See the License for the specific language governing permissions and
 ;   limitations under the License.
 
+; This comes very first, to surround all BSS in all files
+	.bss
+start_bss:
+
 	.text
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -20,16 +24,16 @@
 ; 1. Invoke the actual demo code as a supervisor subroutine.
 ; 2. Exit back to the OS when the supervisor subroutine returns.
 ;;;;;;;;
-user_main:
-	; Invoke XBIOS(38) = Supexec
-	pea	super_main	; address of subroutine
-	move.w	#38,-(sp)	; 38 = Supexec
-	trap	#14		; 14 = XBIOS
-	addq.l	#6,sp		; pop parameters from the stack
+core_main_user:
+	; Invoke XBIOS(38,core_main_super_check) = Supexec
+	pea	core_main_super		; address of subroutine
+	move.w	#38,-(sp)		; 38 = Supexec
+	trap	#14			; 14 = XBIOS
+	addq.l	#6,sp			; pop parameters from the stack
 
 	; Invoke GEMDOS(0) = Pterm0
-	move.w	#0,-(sp)	; 0 = Pterm0
-	trap	#1		; 1 = GEMDOS
+	move.w	#0,-(sp)		; 0 = Pterm0
+	trap	#1			; 1 = GEMDOS
 	; Pterm0 returns to the calling process
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -39,28 +43,27 @@ user_main:
 ; 2. Check that we're on a color monitor.
 ; 3. Invoke real code if everything is fine.
 ;;;;;;;;
-super_main:
+core_main_super:
+	; Check for supervisor mode
 	move.w	sr,d0
-	btst.l	#13,d0		; bit #13 of SR is supervisor ($2000)
-	beq.s	.exit		; bit not set = we're not in supervisor, exit
-	btst.b	#1,$ffff8260.w	; bit #1 of $8260.w is monochrome mode ($02)
-	bne.s	.exit		; bit set = we're in monochrome, exit
-	bsr.s	super_main2	; invoke inner code.
+	btst.l	#13,d0			; bit #13 of SR is supervisor ($2000)
+	beq.s	.exit			; bit = 0 : we're not in supervisor, exit
+
+	; Check for color monitor
+	btst.b	#1,$ffff8260.w		; bit #1 of $8260.w is monochrome mode ($02)
+	bne.s	.exit			; bit != 0 : we're in monochrome, exit
+
+	bsr.s	core_main		; invoke inner code.
 .exit:
 	rts
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; This is the actual start of the demo
 ;;;;;;;;
-super_main2:
+core_main:
 
-; Clear BSS
-	lea.l	start_bss,a0
-	lea.l	end_bss,a1
-.clear_bss:
-	clr.b	(a0)+
-	cmp.l	a0,a1
-	bne.s	.clear_bss
+; Clear BSS. This comes first, before we save anything to BSS.
+	bsr	core_bss_clear
 
 ; Save status register, disable all interrupts
 	move.w	sr,save_sr
@@ -232,6 +235,22 @@ super_main2:
 	move.w	save_sr,sr
 	rts
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Clear the BSS
+;
+; Caution: this makes assumptions about the way source files are organized,
+;	all included source files must be between start_bss and end_bss
+;;;;;;;;
+
+core_bss_clear:
+	lea.l	start_bss,a0
+	lea.l	end_bss,a1
+.clear_bss:
+	clr.b	(a0)+
+	cmp.l	a0,a1
+	bne.s	.clear_bss
+	rts
+
 empty_interrupt:
 	rte
 
@@ -362,9 +381,8 @@ main_loop:
 
 
 ; Uninitialized memory
-	.bss
-start_bss:
 
+	.bss
 save_stack:
 	ds.l	1
 save_timer:
@@ -456,4 +474,6 @@ current_thread:
 raw_buffer:
 	ds.b	32000*2+254
 
+; This comes very last, to surround all BSS in all files
+	.bss
 end_bss:
