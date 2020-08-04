@@ -93,11 +93,11 @@ core_main_inner:
 	bsr.s	core_int_save_setup
 	bsr	core_gfx_save_setup
 	bsr	core_thr_setup
-	bsr	core_int_enable
+	bsr	core_int_activate
 
 	bsr	main_thread_entry
 
-	bsr	core_int_disable
+	bsr	core_int_deactivate
 	bsr	core_gfx_restore
 	bsr	core_int_restore
 	rts
@@ -125,9 +125,9 @@ core_int_save_setup:
 	move.w	#$2700,sr
 
 ; Save MFP
-; Save enable status
-	move.b	$fffffa07.w,save_mfp_enable_a
-	move.b	$fffffa09.w,save_mfp_enable_b
+; Save active status
+	move.b	$fffffa07.w,save_mfp_active_a
+	move.b	$fffffa09.w,save_mfp_active_b
 	move.b	$fffffa13.w,save_mfp_mask_a
 	move.b	$fffffa15.w,save_mfp_mask_b
 	move.b	$fffffa17.w,save_mfp_vector
@@ -137,7 +137,7 @@ core_int_save_setup:
 	move.b	$fffffa1b.w,save_mfp_timer_b_control
 	move.b	$fffffa21.w,save_mfp_timer_b_data	; ???
 
-; Disable all MFP interrupts, set auto-clear
+; Deactivate all MFP interrupts, set auto-clear
 	clr.b	$fffffa07.w
 	clr.b	$fffffa09.w
 	move.b	#$40,$fffffa17.w
@@ -173,14 +173,14 @@ core_int_save_setup:
 	rts
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; Enable and sync our interrupts
+; Activate and sync our interrupts
 ;;;;;;;;
-core_int_enable:
+core_int_activate:
 ; Sync interrupts
 
 	stop	#$2300			; wait for VBL
 
-	move.b	#$1,$fffffa07.w		; enable timer B
+	move.b	#$1,$fffffa07.w		; activate timer B
 	move.b	#$8,$fffffa1b.w		; set timer B to count events
 	move.b	#199,$fffffa21.w	; count to the last line
 
@@ -200,10 +200,10 @@ core_int_enable:
 	rts
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; Disable our interrupts
+; Deactivate our interrupts
 ;;;;;;;;
-core_int_disable:
-; Disable MFP
+core_int_deactivate:
+; Deactivate MFP
 	clr.b	$fffffa07.w
 	clr.b	$fffffa09.w
 
@@ -229,8 +229,8 @@ core_int_restore:
 	move.b	save_mfp_mask_a,$fffffa13.w
 	move.b	save_mfp_mask_b,$fffffa15.w
 	move.b	save_mfp_vector,$fffffa17.w
-	move.b	save_mfp_enable_a,$fffffa07.w
-	move.b	save_mfp_enable_b,$fffffa09.w
+	move.b	save_mfp_active_a,$fffffa07.w
+	move.b	save_mfp_active_b,$fffffa09.w
 
 	move.w	save_sr,sr
 	rts
@@ -458,9 +458,9 @@ save_vbl:
 save_hbl:
 	ds.l	1
 
-save_mfp_enable_a:
+save_mfp_active_a:
 	ds.b	1
-save_mfp_enable_b:
+save_mfp_active_b:
 	ds.b	1
 save_mfp_mask_a:
 	ds.b	1
