@@ -150,16 +150,19 @@ input:
 
 timer:
 	move.b	#1,music_thread_ready
-	bra	switch_from_int
+	bra.s	switch_from_int
 
 hbl:
 	move.b	#1,update_thread_ready
-	bra	switch_from_int
+	bra.s	switch_from_int
 
 ; Uninitialized memory
 
 	.bss
 	.even
+save_sr:
+	ds.w	1
+
 save_timer_a:
 	ds.l	1
 save_timer_b:

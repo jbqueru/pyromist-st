@@ -28,6 +28,7 @@
 
 	.include "coregfx.s"
 	.include "coreint.s"
+	.include "corethr.s"
 
 	.text
 
@@ -95,7 +96,7 @@ core_main:
 core_main_inner:
 	bsr	core_int_save_setup
 	bsr	core_gfx_save_setup
-	bsr.s	core_thr_setup
+	bsr	core_thr_setup
 	bsr	core_int_activate
 
 	bsr	main_thread_entry
@@ -120,72 +121,7 @@ core_bss_clear:
 	bne.s	.clear_bss
 	rts
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; Set up thread
-;;;;;;;;
-core_thr_setup:
-; Set up threading system
-	lea.l	music_thread_stack_top,a0
-	move.l	#music_thread_entry,-(a0)	; PC
-	move.w	#$2300,-(a0)			; SR
-	suba.w	#64,a0				; D0-A6, USP
-	move.l	a0,music_thread_current_stack
 
-	lea.l	update_thread_stack_top,a0
-	move.l	#update_thread_entry,-(a0)	; PC
-	move.w	#$2300,-(a0)			; SR
-	suba.w	#64,a0				; D0-A6, USP
-	move.l	a0,update_thread_current_stack
-
-	lea.l	draw_thread_stack_top,a0
-	move.l	#draw_thread_entry,-(a0)	; PC
-	move.w	#$2300,-(a0)			; SR
-	suba.w	#64,a0				; D0-A6, USP
-	move.l	a0,draw_thread_current_stack
-
-	move.l	#main_thread_current_stack,current_thread
-
-	rts
-
-switch_from_int:
-	movem.l	d0-a6,-(sp)
-	move.l	usp,a0
-	move.l	a0,-(sp)
-	bra.s	switch_and_return
-
-switch_threads:
-	move.w	#$2300,-(sp)
-	movem.l	d0-a6,-(sp)
-	move.l	usp,a0
-	move.l	a0,-(sp)
-
-switch_and_return:
-	move.l	current_thread,a0
-	move.l	sp,(a0)
-.try_music_thread:
-	tst.b	music_thread_ready
-	beq.s	.try_update_thread
-	lea.l	music_thread_current_stack,a0
-	bra.s	.thread_selected
-.try_update_thread:
-	tst.b	update_thread_ready
-	beq.s	.try_draw_thread
-	lea.l	update_thread_current_stack,a0
-	bra.s	.thread_selected
-.try_draw_thread:
-	tst.b	draw_thread_ready
-	beq.s	.use_main_thread
-	lea.l	draw_thread_current_stack,a0
-	bra.s	.thread_selected
-.use_main_thread:
-	lea.l	main_thread_current_stack,a0
-.thread_selected:
-	move.l	(a0),sp
-	move.l	a0,current_thread
-	move.l	(sp)+,a0
-	move.l	a0,usp
-	movem.l	(sp)+,d0-a6
-	rte
 
 music_thread_entry:
 	.rept	1000
@@ -234,44 +170,4 @@ main_loop:
 	.bss
 	.even
 save_stack:
-	ds.l	1
-save_sr:
-	ds.w	1
-
-	.even
-music_thread_current_stack:
-	ds.l	1
-music_thread_stack_bottom:
-	ds.b	1024
-music_thread_stack_top:
-music_thread_ready:
-	ds.b	1
-
-	.even
-update_thread_current_stack:
-	ds.l	1
-update_thread_stack_bottom:
-	ds.b	1024
-update_thread_stack_top:
-update_thread_ready:
-	ds.b	1
-
-	.even
-draw_thread_current_stack:
-	ds.l	1
-draw_thread_stack_bottom:
-	ds.b	1024
-draw_thread_stack_top:
-draw_thread_ready:
-	ds.b	1
-
-	.even
-main_thread_current_stack:
-	ds.l	1
-main_thread_stack_bottom:
-	ds.b	1024
-main_thread_stack_top:
-
-	.even
-current_thread:
 	ds.l	1
