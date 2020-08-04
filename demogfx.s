@@ -12,34 +12,36 @@
 ;   See the License for the specific language governing permissions and
 ;   limitations under the License.
 
-
 	.text
 
 update_thread_entry:
-	.rept	1000
-	move.w	#$070,$ffff8240.w
-	clr.w	$ffff8240.w
-	.endr
+;;; Start customized code
+	nop
+;;; End customized code
+
+	; Unblock draw thread, block this thread until it's ready again
 	move.w	#$2700,sr
 	move.b	#1,draw_thread_ready
 	clr.b	update_thread_ready
 	jsr	switch_threads
-	bra	update_thread_entry
+	bra.s	update_thread_entry
 
 draw_thread_entry:
-	.rept	1000
-	move.w	#$700,$ffff8240.w
-	clr.w	$ffff8240.w
-	.endr
+;;; Start customized code
+	nop
+;;; End customized code
+
+	; Block this thread until it's ready again
 	move.w	#$2700,sr
 	clr.b	draw_thread_ready
 	jsr	switch_threads
-	bra	draw_thread_entry
+	bra.s	draw_thread_entry
 
 main_thread_entry:
 main_loop:
-	move.w	#$007,$ffff8240.w
-	clr.w	$ffff8240.w
+;;; Start customized code
+	nop
+;;; End customized code
 
 ; Check for a keypress
 ; NOTE: would be good to do that with an interrupt handler, but I'm lazy

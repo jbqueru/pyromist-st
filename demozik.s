@@ -15,11 +15,12 @@
 	.text
 
 music_thread_entry:
-	.rept	1000
-	move.w	#$770,$ffff8240.w
-	clr.w	$ffff8240.w
-	.endr
+;;; Start customized code
+	nop
+;;; End customized code
+
+	; Block this thread until it's ready again
 	move.w	#$2700,sr
 	clr.b	music_thread_ready
 	jsr	switch_threads
-	bra	music_thread_entry
+	bra.s	music_thread_entry
