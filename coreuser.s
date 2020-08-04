@@ -43,7 +43,7 @@ core_main_user:
 	trap	#1			; 1 = GEMDOS
 	; Pterm0 returns to the calling process
 
-	.include	"democore.s"
+	.include	"coremain.s"
 
 ; This comes very last, to surround all BSS in all files
 	.bss

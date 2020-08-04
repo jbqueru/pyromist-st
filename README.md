@@ -16,7 +16,7 @@ My Hatari configuration:
 
 My RMAC configuration:
 
-	rmac -s -v -p demomain.s -o out/demomain.prg
+	rmac -s -v -p coreuser.s -o out/demo.prg
 
 # Multitasking principles
 
