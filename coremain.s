@@ -15,13 +15,13 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;                                                                       ;;;
-;;; This is the kernel of the demo                                        ;;;
+;;; This is the kernel of the demo (including related includes)           ;;;
 ;;; This includes:                                                        ;;;
 ;;;   * Machine setup                                                     ;;;
 ;;;   * Interrupts                                                        ;;;
 ;;;   * Threading                                                         ;;;
 ;;;   * Inputs                                                            ;;;
-;;;   * Page flipping                                                     ;;;
+;;;   * Graphics sync between hardware and software                       ;;;
 ;;;                                                                       ;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -30,7 +30,8 @@
 	.include "coreint.s"
 	.include "corethr.s"
 
-	.text
+	.include "demozik.s"
+	.include "demogfx.s"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Start of supervisor code.
@@ -44,6 +45,7 @@
 ;
 ; TODO: investigate whether to check the MFP pin for monochrome monitor.
 ;;;;;;;;
+	.text
 core_main_super:
 	; Check for supervisor mode
 	move.w	sr,d0
@@ -71,12 +73,13 @@ core_main_super:
 ; Note: this routine assumes that there's already enough stack set up to
 ; invoke a subroutine.
 ;;;;;;;;
+	.text
 core_main:
 	; This has to come first, before anything gets saved to BSS
 	bsr.s	core_bss_clear
 
 	; Save stack
-	move.l	sp,save_stack
+	move.l	sp,save_sp
 
 	; Set up our stack
 	lea.l	main_thread_stack_top,sp
@@ -85,21 +88,32 @@ core_main:
 	bsr.s	core_main_inner
 
 	; Restore stack
-	move.l	save_stack,sp
+	move.l	save_sp,sp
 
 	; Exit
 	rts
 
+; Variable to save the original stack pointer
+	.bss
+	.even
+save_sp:
+	ds.l	1
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; This is the actual start of the demo.
+; This is the central code of the demo.
+;
+; 1. Set things up.
+; 2. Invoke the demo code.
+; 3. Restore the state.
 ;;;;;;;;
+	.text
 core_main_inner:
 	bsr	core_int_save_setup
 	bsr	core_gfx_save_setup
 	bsr	core_thr_setup
 	bsr	core_int_activate
 
-	bsr	main_thread_entry
+	bsr.s	main_thread_entry
 
 	bsr	core_int_deactivate
 	bsr	core_gfx_restore
@@ -110,8 +124,14 @@ core_main_inner:
 ; Clear the BSS
 ;
 ; Caution: this makes assumptions about the way source files are organized,
-;	all included source files must be between start_bss and end_bss
+;	all included source files must be between start_bss and end_bss.
+;	Those assumptions are enforced in the outermost file, but it doesn't
+;	make sense to have the code there as there are potentially multiple
+;	such outer files.
+;
+; TODO: investigate faster ways to clear this.
 ;;;;;;;;
+	.text
 core_bss_clear:
 	lea.l	start_bss,a0
 	lea.l	end_bss,a1
@@ -120,54 +140,3 @@ core_bss_clear:
 	cmp.l	a0,a1
 	bne.s	.clear_bss
 	rts
-
-
-
-music_thread_entry:
-	.rept	1000
-	move.w	#$770,$ffff8240.w
-	clr.w	$ffff8240.w
-	.endr
-	move.w	#$2700,sr
-	clr.b	music_thread_ready
-	jsr	switch_threads
-	bra	music_thread_entry
-
-update_thread_entry:
-	.rept	1000
-	move.w	#$070,$ffff8240.w
-	clr.w	$ffff8240.w
-	.endr
-	move.w	#$2700,sr
-	move.b	#1,draw_thread_ready
-	clr.b	update_thread_ready
-	jsr	switch_threads
-	bra	update_thread_entry
-
-draw_thread_entry:
-	.rept	1000
-	move.w	#$700,$ffff8240.w
-	clr.w	$ffff8240.w
-	.endr
-	move.w	#$2700,sr
-	clr.b	draw_thread_ready
-	jsr	switch_threads
-	bra	draw_thread_entry
-
-main_thread_entry:
-main_loop:
-	move.w	#$007,$ffff8240.w
-	clr.w	$ffff8240.w
-
-; Check for a keypress
-; NOTE: would be good to do that with an interrupt handler, but I'm lazy
-	cmp.b	#$39,$fffffc02.w
-	bne.s	main_loop
-	rts
-
-; Uninitialized memory
-
-	.bss
-	.even
-save_stack:
-	ds.l	1
