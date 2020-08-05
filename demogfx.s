@@ -21,10 +21,11 @@ update_thread_entry:
 
 	; Unblock draw thread, block this thread until it's ready again
 	move.w	#$2700,sr
+	move.l	next_to_update,most_recently_updated
 	move.b	#1,draw_thread_ready
 	clr.b	update_thread_ready
 	jsr	switch_threads
-	bra.s	update_thread_entry
+	bra	update_thread_entry
 
 draw_thread_entry:
 ;;; Start customized code
@@ -33,6 +34,10 @@ draw_thread_entry:
 
 	; Block this thread until it's ready again
 	move.w	#$2700,sr
+	move.l	back_drawn_data,-(sp)
+	move.l	back_to_draw_data,back_drawn_data
+	move.l	(sp)+,back_to_draw_data
+	move.l	back_to_draw_data,next_to_update
 	clr.b	draw_thread_ready
 	jsr	switch_threads
 	bra.s	draw_thread_entry

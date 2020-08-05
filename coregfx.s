@@ -32,7 +32,7 @@ core_gfx_save_setup:
 	move.b	$ffff8203.w,save_fb_low_addr
 
 ; Set up our framebuffers
-	move.l	#raw_buffer+255,d0
+	move.l	#raw_fb+255,d0
 	clr.b	d0
 	move.l	d0,back_buffer
 	add.l	#32000,d0
@@ -105,5 +105,19 @@ front_buffer:
 back_buffer:
 	ds.l	1
 
-raw_buffer:
+front_drawn_data:
+	ds.l	1
+front_to_draw_data:
+	ds.l	1
+back_drawn_data:
+	ds.l	1
+back_to_draw_data:
+	ds.l	1
+
+most_recently_updated:
+	ds.l	1
+next_to_update:
+	ds.l	1
+
+raw_fb:
 	ds.b	32000*2+255

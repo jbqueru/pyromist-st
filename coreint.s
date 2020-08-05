@@ -146,14 +146,34 @@ input:
 
 timer:
 	move.b	#1,music_thread_ready
-	bra.s	switch_from_int
+	bra	switch_from_int
+
 
 hbl:
+	; If the draw thread is idle, we can swap framebuffers
+	tst.b	draw_thread_ready	; is the draw thread running
+	bne.s	.fb_ready		; if yes, don't swap frame buffers
+	; TODO: move this with graphics code
+	; TODO: can this be done with offsets?
+	move.l	front_buffer,-(sp)
+	move.l	back_buffer,front_buffer
+	move.l	(sp)+,back_buffer
+	move.b	front_buffer+1,$ffff8201.w
+	move.b	front_buffer+2,$ffff8203.w
+
+	move.l	front_drawn_data,-(sp)
+	move.l	back_drawn_data,front_drawn_data
+	move.l	(sp)+,back_drawn_data
+
+	move.l	front_to_draw_data,-(sp)
+	move.l	back_to_draw_data,front_to_draw_data
+	move.l	(sp)+,back_to_draw_data
+
+.fb_ready:
 	move.b	#1,update_thread_ready
 	bra.s	switch_from_int
 
 ; Uninitialized memory
-
 	.bss
 	.even
 save_sr:
