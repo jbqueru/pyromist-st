@@ -25,7 +25,7 @@ update_thread_entry:
 	move.b	#1,draw_thread_ready
 	clr.b	update_thread_ready
 	jsr	switch_threads
-	bra	update_thread_entry
+	bra.s	update_thread_entry
 
 draw_thread_entry:
 ;;; Start customized code
