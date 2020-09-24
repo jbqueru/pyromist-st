@@ -14,4 +14,4 @@ My Hatari configuration:
 
 My RMAC configuration:
 
-	rmac -s -v -p democore.s -o out/pyromist.prg
+	rmac -s -v -p coreuser.s -o out/pyromist.prg
