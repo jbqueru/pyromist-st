@@ -32,7 +32,7 @@ start_bss:
 ; 2. Exit back to the OS when the supervisor subroutine returns.
 ;;;;;;;;
 core_main_user:
-	; Invoke XBIOS(38,core_main_super_check) = Supexec
+	; Invoke XBIOS(38,core_main_super) = Supexec
 	pea	core_main_super		; address of subroutine
 	move.w	#38,-(sp)		; 38 = Supexec
 	trap	#14			; 14 = XBIOS
