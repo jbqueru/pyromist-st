@@ -113,7 +113,7 @@ core_main_inner:
 	bsr	core_thr_setup
 	bsr	core_int_activate
 
-	bsr.s	main_thread_entry
+	bsr	main_thread_entry
 
 	bsr	core_int_deactivate
 	bsr	core_gfx_restore

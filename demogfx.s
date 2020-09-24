@@ -40,7 +40,7 @@ draw_thread_entry:
 	move.l	back_to_draw_data,next_to_update
 	clr.b	draw_thread_ready
 	jsr	switch_threads
-	bra.s	draw_thread_entry
+	bra	draw_thread_entry
 
 main_thread_entry:
 main_loop:
