@@ -53,3 +53,6 @@ main_loop:
 	cmp.b	#$39,$fffffc02.w
 	bne.s	main_loop
 	rts
+
+;;; Start customized code
+;;; End customized code
