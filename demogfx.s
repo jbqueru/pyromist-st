@@ -93,9 +93,13 @@ draw_thread_entry:
 	; d0 = limes to draw after this one
 	move.w	#199,d0
 .draw_line:
+	move.l	a0,a6
+	move.w	d0,d7
+	andi.w	#$fff0,d7
+	lsr.w	d7
+	adda.w	d7,a6
 	; draw one slice, move to next line
-	move.b	(a2),(a0)
-	adda.w	#160,a0
+	move.b	(a2),(a6)
 
 	; check is that was the last line of this slice
 	subq.w	#1,d1
@@ -109,15 +113,17 @@ draw_thread_entry:
 	bne.s	.same_char
 
 	; move to the next character
-	moveq.l	#0,d3
-	move.b	(a1)+,d3
-	sub.b	#32,d3
-	lsl.w	#3,d3
+	moveq.l	#0,d7
+	move.b	(a1)+,d7
+	sub.b	#32,d7
+	lsl.w	#3,d7
 	move.l	#twist_font,a2
-	add.w	d3,a2
+	add.w	d7,a2
+
 	moveq.l	#8,d2
 
 .same_char:
+	adda.w	#160,a0
 	dbra	d0,.draw_line
 
 .not_twist:
