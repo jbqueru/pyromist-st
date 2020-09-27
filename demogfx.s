@@ -72,7 +72,7 @@ draw_thread_entry:
 	moveq.l	#8,d2
 	sub.w	d6,d2
 
-	; d7 = d7/8 = number of slices to skip
+	; d7 = d7/8 = number of characters to skip
 	lsr.w	#3,d7
 
 	; a1 = address of the character to draw
