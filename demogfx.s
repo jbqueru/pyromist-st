@@ -27,7 +27,7 @@ update_thread_entry:
 	; move by 1 line
 	move.w	(a5),d0
 	addq.w	#1,d0
-	cmp.w	#416,d0 ; TODO: write proper code to handle text length
+	cmp.w	#1088,d0 ; TODO: write proper code to handle text length
 	bne.s	.in_range
 	moveq.l	#0,d0 ; TODO: move to next phase instead of wrapping
 .in_range:
@@ -50,57 +50,78 @@ draw_thread_entry:
 	cmp.b	#1,demo_phase
 	bne.s	.not_twist
 
-	move.l	back_buffer,a0
-
 	; handle the scroll by skipping lines
-	; d0 = number of lines to skip
+	; d7 = position in scroller = lines to skip in whole scroller
 	move.l	back_to_draw_data,a6
-	move.w	(a6),d0
+	move.w	(a6),d7
 
-	; d1 = 8-(d0%7) = number of remaining lines on current character
-	move.w	d0,d1
-	andi.w	#7,d1
+	; d1 = 4-d7%4 = number of remaining lines in current slice
+	move.w	d7,d1
+	andi.w	#3,d1
 	neg.w	d1
-	addq.w	#8,d1
+	addq.w	#4,d1
+
+	; d7 = d7/4 = number of slices to skip in whole scroller
+	lsr.w	#2,d7
+
+	; d6 = d7%8 = number of slices to skip in current character
+	move.w	d7,d6
+	andi.w	#7,d6
+
+	; d2 = 8-d6 = number of remaining slices on current character
+	moveq.l	#8,d2
+	sub.w	d6,d2
+
+	; d7 = d7/8 = number of slices to skip
+	lsr.w	#3,d7
 
 	; a1 = address of the character to draw
 	move.l	#twist_text,a1
-	lsr.w	#3,d0
-	adda.w	d0,a1
+	adda.w	d7,a1
 
 	; a2 = address of the font slice to draw
-	moveq.l	#0,d2
-	move.b	(a1)+,d2
-	sub.b	#32,d2
-	lsl.w	#3,d2
+	moveq.l	#0,d7
+	move.b	(a1)+,d7
+	sub.b	#32,d7
+	lsl.w	#3,d7
+	add.w	d6,d7
 	move.l	#twist_font,a2
-	add.w	d2,a2
-	; TODO: skip some lines as necessary
+	add.w	d7,a2
 
+	; a0 = destination address
+	move.l	back_buffer,a0
 	; d0 = limes to draw after this one
 	move.w	#199,d0
 .draw_line:
-	; draw one slice
-	move.b	(a2)+,(a0)
+	; draw one slice, move to next line
+	move.b	(a2),(a0)
+	adda.w	#160,a0
 
-	; check if that was the last slice of this character
+	; check is that was the last line of this slice
 	subq.w	#1,d1
 	bne.s	.same_char
 
+	moveq.l	#4,d1
+	addq.w	#1,a2
+
+	; check if that was the last slice of this character
+	subq.w	#1,d2
+	bne.s	.same_char
+
 	; move to the next character
-	moveq.l	#0,d2
-	move.b	(a1)+,d2
-	sub.b	#32,d2
-	lsl.w	#3,d2
+	moveq.l	#0,d3
+	move.b	(a1)+,d3
+	sub.b	#32,d3
+	lsl.w	#3,d3
 	move.l	#twist_font,a2
-	add.w	d2,a2
-	moveq.l	#8,d1
+	add.w	d3,a2
+	moveq.l	#8,d2
 
 .same_char:
-	; move to the next screen line
-	adda.w	#160,a0
 	dbra	d0,.draw_line
+
 .not_twist:
+
 ;;; End customized code
 
 	; Block this thread until it's ready again
@@ -463,9 +484,9 @@ twist_font:
 	dc.b	0
 
 twist_text:
-	dc.b	"                         "
-	dc.b	"! ! !   !!! !!! !!!   ! ! !"
-	dc.b	"                         "
+	dc.b	"       "				; 7
+	dc.b	"! ! !   !!! !!! !!!   ! ! !"		; 27
+	dc.b	"       "				; 7
 
 	.bss
 	.even
