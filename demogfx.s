@@ -99,6 +99,8 @@ draw_thread_entry:
 	lsr.w	#2,d7
 	adda.w	d7,a6
 	; draw one slice, move to next line
+	tst.b	(a2)
+	beq.s	.empty_slice
 	lea.l	heap,a5
 	moveq.l	#0,d7
 	move.w	d0,d7
@@ -117,6 +119,18 @@ draw_thread_entry:
 	addq.l	#2,a6
 	move.l	(a5)+,(a6)+
 	move.w	(a5)+,(a6)+
+	bra.s	.done_slice
+.empty_slice:
+	moveq.l	#0,d7
+	move.l	d0,(a6)+
+	move.w	d0,(a6)+
+	addq.l	#2,a6
+	move.l	d0,(a6)+
+	move.w	d0,(a6)+
+	addq.l	#2,a6
+	move.l	d0,(a6)+
+	move.w	d0,(a6)+
+.done_slice:
 
 	; check is that was the last line of this slice
 	subq.w	#1,d1
@@ -522,6 +536,7 @@ main_loop:
 
 	.even
 twist_slices:
+; TODO: figure out best ordering of slices to handle symmetric vs asymmetric
 ;	dc.w	%0000000000000000,%0000000000000000	; empty
 
 	dc.w	%0000000001111111,%1000000000000000	; center small
