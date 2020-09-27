@@ -175,16 +175,21 @@ main_loop:
 ; half-offset (2x) (for Z'?)
 ; asymetrical split (for NQ)
 
-; 6 to 8 slices
+; 16 whole pixel positions
+
+; 33 pix wide (minus guards) -> 48 pix shifted data -> 18 bytes per row
+
+; 7 to 10 slices
 ;
-; min 16 pixel positions
-; 32 rotations?
+; 2 sub-pixel positions
+; 32 rotations
 
-; 32 pix wide = 12 bytes per slice w/ split storage (CPU?)
+; memory usage = 18 * 16 * 10 * 2 * 32 = 184320
 
-; 8*32*64*12 = 196608
-
-; non-linear rotation space for smoothness?
+; 10 slice layouts, 1024*18 bytes each
+; 32 half-pixel positions, 32*18 bytes each
+; 32 rotations, 18 bytes each
+; (slice * 1024 + half-pixel * 32 + rotation) * 18
 
 ;   ########
 ; ####    ####
