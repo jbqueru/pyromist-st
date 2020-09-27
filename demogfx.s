@@ -170,12 +170,13 @@ main_loop:
 	move.l	back_to_draw_data,next_to_update
 
 	lea.l	heap,a0
-	moveq.l	#9,d0
+	lea.l	twist_slices,a1
+	moveq.l	#11,d0
 .l0:
 	moveq.l	#31,d1
-	move.w	#$7fff,d5
-	move.w	#$ffff,d6
-	move.w	#$0000,d7
+	move.w	(a1)+,d5
+	move.w	(a1)+,d6
+	clr.w	d7
 .l1:
 	moveq.l	#31,d2
 .l2:
@@ -215,25 +216,25 @@ main_loop:
 ; centered small
 ; centered medium
 ; centered large
-; clipped
-; side (2x)
 ; split
+; side (2x)
+; clipped (2x)
 
 ; half-offset (2x) (for Z'?)
-; asymetrical split (for NQ)
+; asymetrical split (for NQ) (2x)
 
 ; 16 whole pixel positions
 
 ; 33 pix wide (minus guards) -> 48 pix shifted data -> 18 bytes per row
 
-; 7 to 10 slices
+; 8 to 12 slices
 ;
 ; 2 sub-pixel positions
 ; 32 rotations
 
-; memory usage = 18 * 16 * 10 * 2 * 32 = 184320
+; memory usage = 18 * 16 * 12 * 2 * 32 = 221184
 
-; 10 slice layouts, 1024*18 bytes each
+; 12 slice layouts, 1024*18 bytes each
 ; 32 half-pixel positions, 32*18 bytes each
 ; 32 rotations, 18 bytes each
 ; (slice * 1024 + half-pixel * 32 + rotation) * 18
@@ -519,7 +520,24 @@ main_loop:
 ;
 ;
 
+	.even
+twist_slices:
+;	dc.w	%0000000000000000,%0000000000000000	; empty
 
+	dc.w	%0000000001111111,%1000000000000000	; center small
+	dc.w	%0000011111111111,%1111100000000000	; center medium
+	dc.w	%0111111111111111,%1111111110000000	; center large
+	dc.w	%0111111110000000,%0111111110000000	; split
+
+	dc.w	%0111111110000000,%0000000000000000	; side 1
+	dc.w	%0000000000000000,%0111111110000000	; side 2
+	dc.w	%0111111111111111,%1111100000000000	; cropped 1
+	dc.w	%0000011111111111,%1111111110000000	; cropped 2
+
+	dc.w	%0000011111111000,%0000000000000000	; offset 1
+	dc.w	%0000000000000111,%1111100000000000	; offset 2
+	dc.w	%0111111111111000,%0111111110000000	; half-split 1
+	dc.w	%0111111110000111,%1111111110000000	; half-split 2
 
 twist_font:
 ; space
@@ -562,5 +580,5 @@ demo_phase:
 
 	.even
 heap:
-	ds.b	184320
+	ds.b	221184
 ;;; End customized code
