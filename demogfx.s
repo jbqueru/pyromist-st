@@ -100,6 +100,15 @@ draw_thread_entry:
 	adda.w	d7,a6
 	; draw one slice, move to next line
 	lea.l	heap,a5
+	moveq.l	#0,d7
+	move.w	d0,d7
+	andi.w	#$000f,d7
+	lsl.w	#5,d7
+	add.w	d7,d7
+	move.l	d7,d6
+	lsl.l	#3,d7
+	add.l	d6,d7
+	add.l	d7,a5
 	move.l	(a5)+,(a6)+
 	move.w	(a5)+,(a6)+
 	addq.l	#2,a6
@@ -164,19 +173,25 @@ main_loop:
 	moveq.l	#9,d0
 .l0:
 	moveq.l	#31,d1
+	move.w	#$7fff,d5
+	move.w	#$ffff,d6
+	move.w	#$0000,d7
 .l1:
 	moveq.l	#31,d2
 .l2:
-	move.w	#$ffff,(a0)+
+	move.w	d5,(a0)+
 	move.w	#$0000,(a0)+
 	move.w	#$0000,(a0)+
-	move.w	#$ffff,(a0)+
+	move.w	d6,(a0)+
 	move.w	#$0000,(a0)+
 	move.w	#$0000,(a0)+
-	move.w	#$0000,(a0)+
+	move.w	d7,(a0)+
 	move.w	#$0000,(a0)+
 	move.w	#$0000,(a0)+
 	dbra	d2,.l2
+	lsr.w	d5
+	roxr.w	d6
+	roxr.w	d7
 	dbra	d1,.l1
 	dbra	d0,.l0
 
