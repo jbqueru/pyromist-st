@@ -95,14 +95,14 @@ draw_thread_entry:
 .draw_line:
 	move.l	a0,a6
 	move.w	d0,d7
-	andi.w	#$fff0,d7
-	lsr.w	d7
+	andi.w	#$ffe0,d7
+	lsr.w	#2,d7
 	adda.w	d7,a6
 	; draw one slice, move to next line
 	lea.l	heap,a5
 	moveq.l	#0,d7
 	move.w	d0,d7
-	andi.w	#$000f,d7
+	andi.w	#$001f,d7
 	lsl.w	#5,d7
 	add.w	d7,d7
 	move.l	d7,d6
@@ -189,9 +189,12 @@ main_loop:
 	move.w	#$0000,(a0)+
 	move.w	#$0000,(a0)+
 	dbra	d2,.l2
+	btst	#0,d1
+	bne.s	.same_pix
 	lsr.w	d5
 	roxr.w	d6
 	roxr.w	d7
+.same_pix:
 	dbra	d1,.l1
 	dbra	d0,.l0
 
