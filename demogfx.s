@@ -48,7 +48,7 @@ draw_thread_entry:
 
 	; check if we're actively running the twist scroller
 	cmp.b	#1,demo_phase
-	bne.s	.not_twist
+	bne	.not_twist
 
 	; handle the scroll by skipping lines
 	; d7 = position in scroller = lines to skip in whole scroller
@@ -99,7 +99,15 @@ draw_thread_entry:
 	lsr.w	d7
 	adda.w	d7,a6
 	; draw one slice, move to next line
-	move.b	(a2),(a6)
+	lea.l	heap,a5
+	move.l	(a5)+,(a6)+
+	move.w	(a5)+,(a6)+
+	addq.l	#2,a6
+	move.l	(a5)+,(a6)+
+	move.w	(a5)+,(a6)+
+	addq.l	#2,a6
+	move.l	(a5)+,(a6)+
+	move.w	(a5)+,(a6)+
 
 	; check is that was the last line of this slice
 	subq.w	#1,d1
@@ -144,22 +152,43 @@ main_thread_entry:
 main_loop:
 ;;; Start customized code
 	tst.b	demo_phase
-	bne.s	.not_twist
+	bne	.not_twist
 	move.l	#twist_y1,front_drawn_data
 	move.l	#twist_y2,front_to_draw_data
 	move.l	#twist_y3,back_drawn_data
 	move.l	#twist_y4,back_to_draw_data
 	move.l	back_to_draw_data,most_recently_updated
 	move.l	back_to_draw_data,next_to_update
-	move.b	#1,demo_phase
+
+	lea.l	heap,a0
+	moveq.l	#9,d0
+.l0:
+	moveq.l	#31,d1
+.l1:
+	moveq.l	#31,d2
+.l2:
+	move.w	#$ffff,(a0)+
+	move.w	#$0000,(a0)+
+	move.w	#$0000,(a0)+
+	move.w	#$ffff,(a0)+
+	move.w	#$0000,(a0)+
+	move.w	#$0000,(a0)+
+	move.w	#$0000,(a0)+
+	move.w	#$0000,(a0)+
+	move.w	#$0000,(a0)+
+	dbra	d2,.l2
+	dbra	d1,.l1
+	dbra	d0,.l0
+
 	move.w	#$707,$ffff8242.w
+	move.b	#1,demo_phase
 .not_twist:
 ;;; End customized code
 
 ; Check for a keypress
 ; NOTE: would be good to do that with an interrupt handler, but I'm lazy
 	cmp.b	#$39,$fffffc02.w
-	bne.s	main_loop
+	bne	main_loop
 	rts
 
 ;;; Start customized code
@@ -512,4 +541,8 @@ twist_y4:
 
 demo_phase:
 	ds.b	1
+
+	.even
+heap:
+	ds.b	184320
 ;;; End customized code
