@@ -88,28 +88,42 @@ draw_thread_entry:
 	move.l	#twist_font,a2
 	add.w	d7,a2
 
-	; a0 = destination address
+	; a0 = address of start of line
 	move.l	back_buffer,a0
 	; d0 = limes to draw after this one
 	move.w	#199,d0
 .draw_line:
+	; a6 = address of destination pixels
 	move.l	a0,a6
 	move.w	d0,d7
-	andi.w	#$ffe0,d7
+	andi.w	#$ffe0,d7 ; d7 = offset within line. Note: d0 is half-pixels
 	lsr.w	#2,d7
 	adda.w	d7,a6
 	; draw one slice, move to next line
-	tst.b	(a2)
+	; d7 = slice being drawn
+	moveq.l	#0,d7
+	move.b	(a2),d7
+	; 15 is magic value of empty slice - drawn with code to save RAM
+	cmpi.b	#15,d7
 	beq.s	.empty_slice
 	lea.l	heap,a5
-	moveq.l	#0,d7
-	move.w	d0,d7
-	andi.w	#$001f,d7
-	lsl.w	#5,d7
+
+	; offset for slice (1024 18-byte units for each slice)
+	swap.w	d7
+	lsr.l	#6,d7
+
+	; offset for x position (32 18-byte units for each half-pixel)
+	move.w	d0,d6
+	andi.w	#$001f,d6
+	lsl.w	#5,d6
+	add.w	d6,d7
+
+	; multiply by 18 (d7*2*(1+8))
 	add.w	d7,d7
 	move.l	d7,d6
 	lsl.l	#3,d7
 	add.l	d6,d7
+
 	add.l	d7,a5
 	move.l	(a5)+,(a6)+
 	move.w	(a5)+,(a6)+
@@ -253,21 +267,9 @@ main_loop:
 ; 32 rotations, 18 bytes each
 ; (slice * 1024 + half-pixel * 32 + rotation) * 18
 
-;   ########
-; ####    ####
-; ####    ####
-; ####    ####
-; ############
-; ####    ####
-; ####    ####
 
-; ##########
-; ####    ####
-; ####    ####
-; ##########
-; ####    ####
-; ####    ####
-; ##########
+
+
 
 ;   ########
 ; ####    ####
@@ -536,47 +538,111 @@ main_loop:
 
 	.even
 twist_slices:
-; TODO: figure out best ordering of slices to handle symmetric vs asymmetric
-;	dc.w	%0000000000000000,%0000000000000000	; empty
+	dc.w	%0111111110000000,%0000000000000000	; 0 - side left
+	dc.w	%0000000000000000,%0111111110000000	; 1 - side right
+	dc.w	%0111111111111111,%1111100000000000	; 2 - cropped left
+	dc.w	%0000011111111111,%1111111110000000	; 3 - cropped right
 
-	dc.w	%0000000001111111,%1000000000000000	; center small
-	dc.w	%0000011111111111,%1111100000000000	; center medium
-	dc.w	%0111111111111111,%1111111110000000	; center large
-	dc.w	%0111111110000000,%0111111110000000	; split
+	dc.w	%0000011111111000,%0000000000000000	; 4 - offset left
+	dc.w	%0000000000000111,%1111100000000000	; 5 - offset right
+	dc.w	%0111111111111000,%0111111110000000	; 6 - half-split left
+	dc.w	%0111111110000111,%1111111110000000	; 7 - half-split right
 
-	dc.w	%0111111110000000,%0000000000000000	; side 1
-	dc.w	%0000000000000000,%0111111110000000	; side 2
-	dc.w	%0111111111111111,%1111100000000000	; cropped 1
-	dc.w	%0000011111111111,%1111111110000000	; cropped 2
-
-	dc.w	%0000011111111000,%0000000000000000	; offset 1
-	dc.w	%0000000000000111,%1111100000000000	; offset 2
-	dc.w	%0111111111111000,%0111111110000000	; half-split 1
-	dc.w	%0111111110000111,%1111111110000000	; half-split 2
+	dc.w	%0000000001111111,%1000000000000000	; 8 - center small
+	dc.w	%0000011111111111,%1111100000000000	; 9 - center medium
+	dc.w	%0111111111111111,%1111111110000000	; 10 - center large
+	dc.w	%0111111110000000,%0111111110000000	; 11 - split
 
 twist_font:
 ; space
-	dc.b	0
-	dc.b	0
-	dc.b	0
-	dc.b	0
-	dc.b	0
-	dc.b	0
-	dc.b	0
-	dc.b	0
+	dc.b	15,15,15,15,15,15,15,15
 ; !
-	dc.b	1
-	dc.b	1
-	dc.b	1
-	dc.b	1
-	dc.b	1
-	dc.b	0
-	dc.b	1
-	dc.b	0
+	dc.b	8,8,8,8,8,15,8,15
+
+; "
+	dc.b	15,15,15,15,15,15,15,15
+; #
+	dc.b	15,15,15,15,15,15,15,15
+; $
+	dc.b	15,15,15,15,15,15,15,15
+; %
+	dc.b	15,15,15,15,15,15,15,15
+; &
+	dc.b	15,15,15,15,15,15,15,15
+; '
+	dc.b	15,15,15,15,15,15,15,15
+; (
+	dc.b	15,15,15,15,15,15,15,15
+; )
+	dc.b	15,15,15,15,15,15,15,15
+; *
+	dc.b	15,15,15,15,15,15,15,15
+; +
+	dc.b	15,15,15,15,15,15,15,15
+; ,
+	dc.b	15,15,15,15,15,15,15,15
+; -
+	dc.b	15,15,15,15,15,15,15,15
+; .
+	dc.b	15,15,15,15,15,15,15,15
+; /
+	dc.b	15,15,15,15,15,15,15,15
+; 0
+	dc.b	15,15,15,15,15,15,15,15
+; 1
+	dc.b	15,15,15,15,15,15,15,15
+; 2
+	dc.b	15,15,15,15,15,15,15,15
+; 3
+	dc.b	15,15,15,15,15,15,15,15
+; 4
+	dc.b	15,15,15,15,15,15,15,15
+; 5
+	dc.b	15,15,15,15,15,15,15,15
+; 6
+	dc.b	15,15,15,15,15,15,15,15
+; 7
+	dc.b	15,15,15,15,15,15,15,15
+; 8
+	dc.b	15,15,15,15,15,15,15,15
+; 9
+	dc.b	15,15,15,15,15,15,15,15
+; :
+	dc.b	15,15,15,15,15,15,15,15
+; ;
+	dc.b	15,15,15,15,15,15,15,15
+; <
+	dc.b	15,15,15,15,15,15,15,15
+; =
+	dc.b	15,15,15,15,15,15,15,15
+; >
+	dc.b	15,15,15,15,15,15,15,15
+; ?
+	dc.b	15,15,15,15,15,15,15,15
+; @
+	dc.b	15,15,15,15,15,15,15,15
+
+;   ########
+; ####    ####
+; ####    ####
+; ####    ####
+; ############
+; ####    ####
+; ####    ####
+	dc.b	9,11,11,11,10,11,11,15
+; ##########
+; ####    ####
+; ####    ####
+; ##########
+; ####    ####
+; ####    ####
+; ##########
+	dc.b	2,11,11,2,11,11,2,15
+
 
 twist_text:
 	dc.b	"       "				; 7
-	dc.b	"! ! !   !!! !!! !!!   ! ! !"		; 27
+	dc.b	"A B A   !!! !!! !!!   ! ! !"		; 27
 	dc.b	"       "				; 7
 
 	.bss
