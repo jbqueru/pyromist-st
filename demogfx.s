@@ -16,6 +16,7 @@
 
 update_thread_entry:
 ;;; Start customized code
+; TODO: move twist scroller code to its own source file
 
 	; check if we're actively running the twist scroller
 	cmp.b	#1,demo_phase
@@ -30,6 +31,7 @@ update_thread_entry:
 	cmp.w	#1088,d0 ; TODO: write proper code to handle text length
 	bne.s	.in_range
 	moveq.l	#0,d0 ; TODO: move to next phase instead of wrapping
+	move.b	#2,demo_phase
 .in_range:
 	move.w	d0,(a6)
 .not_twist:
@@ -189,7 +191,7 @@ main_thread_entry:
 main_loop:
 ;;; Start customized code
 	tst.b	demo_phase
-	bne	.not_twist
+	bne	not_twist
 	move.l	#twist_y1,front_drawn_data
 	move.l	#twist_y2,front_to_draw_data
 	move.l	#twist_y3,back_drawn_data
@@ -229,11 +231,19 @@ main_loop:
 
 	move.w	#$707,$ffff8242.w
 	move.b	#1,demo_phase
-.not_twist:
+	bra.s	done_phase
+not_twist:
+	cmp.b	#1,demo_phase
+	bne.s	done_phase
+	nop
+done_phase:
 ;;; End customized code
 
 ; Check for a keypress
 ; NOTE: would be good to do that with an interrupt handler, but I'm lazy
+; TODO: this should on a higher-priority thread, but it also needs to be
+;	on this thread in order to be able to return.
+;	Might need to reconsider which thread is the main thread.
 	cmp.b	#$39,$fffffc02.w
 	bne	main_loop
 	rts
@@ -570,6 +580,7 @@ twist_font:
 twist_text:
 	dc.b	"       "				; 7
 	dc.b	"ABCDEFGHIJKLMNOPQRSTUVWXYZ!"		; 27
+	dc.b	"......."
 	dc.b	"       "				; 7
 
 	.bss
@@ -583,10 +594,13 @@ twist_y3:
 twist_y4:
 	ds.w	1
 
+; TODO: use both phase and callbacks to manage progress through the demo
 demo_phase:
 	ds.b	1
 
 	.even
 heap:
 	ds.b	221184
+heap2:
+	ds.b	307200	; 150 frames of 64*64
 ;;; End customized code
