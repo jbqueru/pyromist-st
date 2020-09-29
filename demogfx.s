@@ -258,8 +258,17 @@ twist_slices:
 	dc.w	%0111111111111111,%1111111110000000	; 10 - center large
 	dc.w	%0111111110000000,%0111111110000000	; 11 - split
 
+; The font uses 31 characters in a span of 59
+; Currently uses 472 bytes
+; Could go to 124 (348 savings) by byte-packing and using non-ASCII encoding
 twist_font:
-; space
+;
+;
+;
+;
+;
+;
+;
 	dc.b	15,15,15,15,15,15,15,15
 ;     ####
 ;     ####
