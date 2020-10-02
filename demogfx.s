@@ -16,11 +16,11 @@
 
 compute_thread_entry:
 ;;; Start customized code
+	; Init: run the twist scroller's precompute code
 	move.l	#twist_compute,compute_routine
 .compute_thread_loop:
 	move.l	compute_routine,a0
-	moveq.l	#0,d0
-	cmpa.l	d0,a0
+	cmpa.l	#0,a0
 	beq.s	.wait_for_draw_code
 	jsr	(a0)
 	bra.s	.done_compute
@@ -31,9 +31,7 @@ compute_thread_entry:
 	cmp.b	draw_phase,d0
 	bhi.s	.done_compute
 	addq.b	#1,compute_phase
-	move.l	compute_wait_routine,a0
-	move.l	a0,compute_routine
-	jsr	(a0)
+	move.l	compute_wait_routine,compute_routine
 .done_compute:
 	bra.s	.compute_thread_loop
 ;;; End customized code
@@ -42,8 +40,7 @@ compute_thread_entry:
 update_thread_entry:
 ;;; Start customized code
 	move.l	update_routine,a0
-	moveq.l	#0,d0
-	cmpa.l	d0,a0
+	cmpa.l	#0,a0
 	beq.s	.wait_for_compute_code
 	jsr	(a0)
 	bra.s	.done_update
@@ -55,9 +52,7 @@ update_thread_entry:
 	bhi.s	.done_update
 	addq.b	#1,draw_phase
 	move.l	draw_wait_routine,draw_routine
-	move.l	update_wait_routine,a0
-	move.l	a0,update_routine
-	jsr	(a0)
+	move.l	update_wait_routine,update_routine
 .done_update:
 ;;; End customized code
 
@@ -76,8 +71,7 @@ update_thread_entry:
 draw_thread_entry:
 ;;; Start customized code
 	move.l	draw_routine,a0
-	moveq.l	#0,d0
-	cmpa.l	d0,a0
+	cmpa.l	#0,a0
 	beq.s	.done_draw
 	jsr	(a0)
 .done_draw:
