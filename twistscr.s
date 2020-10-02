@@ -14,21 +14,7 @@
 
 	.text
 
-update_thread_entry:
-;;; Start customized code
-; TODO: move twist scroller code to its own source file
-	tst.b	draw_phase
-	bne.s	.not_start
-
-	cmp.b	#1,compute_phase
-	blt.s	.done_update
-	move.b	#1,draw_phase
-	bra.s	.done_update
-.not_start:
-	; check if we're actively running the twist scroller
-	cmp.b	#1,draw_phase
-	bne.s	.not_twist
-
+twist_update:
 	move.l	most_recently_updated,a5
 	move.l	next_to_update,a6
 
@@ -41,29 +27,9 @@ update_thread_entry:
 	move.b	#2,draw_phase
 .in_range:
 	move.w	d0,(a6)
-.not_twist:
-.done_update:
-;;; End customized code
-
-	; Unblock draw thread, block this thread until it's ready again
-	move.w	#$2700,sr
-	move.l	next_to_update,most_recently_updated
-	move.b	#1,draw_thread_ready
-	clr.b	update_thread_ready
-	jsr	switch_threads
-; Check for a keypress
-; NOTE: would be good to do that with an interrupt handler, but I'm lazy
-	cmp.b	#$39,$fffffc02.w
-	bne.s	update_thread_entry
 	rts
 
-draw_thread_entry:
-;;; Start customized code
-
-	; check if we're actively running the twist scroller
-	cmp.b	#1,draw_phase
-	bne	.not_twist
-
+twist_draw:
 	; handle the scroll by skipping lines
 	; d7 = position in scroller = lines to skip in whole scroller
 	move.l	back_to_draw_data,a6
@@ -185,24 +151,9 @@ draw_thread_entry:
 	adda.w	#160,a0
 	dbra	d0,.draw_line
 
-.not_twist:
+	rts
 
-;;; End customized code
-
-	; Block this thread until it's ready again
-	move.w	#$2700,sr
-	move.l	back_drawn_data,-(sp)
-	move.l	back_to_draw_data,back_drawn_data
-	move.l	(sp)+,back_to_draw_data
-	move.l	back_to_draw_data,next_to_update
-	clr.b	draw_thread_ready
-	jsr	switch_threads
-	bra	draw_thread_entry
-
-main_thread_entry:
-;;; Start customized code
-	tst.b	compute_phase
-	bne	not_twist
+twist_compute:
 	move.l	#twist_y1,front_drawn_data
 	move.l	#twist_y2,front_to_draw_data
 	move.l	#twist_y3,back_drawn_data
@@ -242,17 +193,8 @@ main_thread_entry:
 
 	move.w	#$707,$ffff8242.w
 	move.b	#1,compute_phase
-	bra.s	done_phase
-not_twist:
-	cmp.b	#1,compute_phase
-	bne.s	done_phase
-	nop
-done_phase:
-;;; End customized code
+	rts
 
-	bra	main_thread_entry
-
-;;; Start customized code
 	.data
 
 	.even
@@ -581,6 +523,7 @@ twist_font:
 ; ####
 ; ############
 	dc.b	10,1,5,8,4,0,10,15
+
 twist_text:
 	dc.b	"       "				; 7
 	dc.b	"ABCDEFGHIJKLMNOPQRSTUVWXYZ!"		; 27
@@ -596,17 +539,3 @@ twist_y3:
 	ds.w	1
 twist_y4:
 	ds.w	1
-
-draw_phase:
-	ds.b	1
-compute_phase:
-	ds.b	1
-
-	.even
-heap:
-	ds.b	221184
-heap2:
-	ds.b	307200	; 150 frames of 64*64
-
-	.include "twistscr.s"
-;;; End customized code
