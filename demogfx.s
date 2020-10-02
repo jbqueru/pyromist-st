@@ -16,19 +16,23 @@
 
 update_thread_entry:
 ;;; Start customized code
-	tst.b	draw_phase
-	bne.s	.not_start
-
-	cmp.b	#1,compute_phase
-	blt.s	.done_update
-	move.b	#1,draw_phase
+	move.l	update_routine,a0
+	moveq.l	#0,d0
+	cmpa.l	d0,a0
+	beq.s	.wait_for_compute_code
+	jsr	(a0)
 	bra.s	.done_update
-.not_start:
-	; check if we're actively running the twist scroller
-	cmp.b	#1,draw_phase
-	bne.s	.not_twist
-	bsr	twist_update
-.not_twist:
+.wait_for_compute_code:
+	move.b	compute_wait_phase,d0
+	tst.b	d0
+	beq.s	.done_update
+	cmp.b	compute_phase,d0
+	bhi.s	.done_update
+	addq.b	#1,draw_phase
+	move.l	draw_wait_routine,draw_routine
+	move.l	update_wait_routine,a0
+	move.l	a0,update_routine
+	jsr	(a0)
 .done_update:
 ;;; End customized code
 
@@ -46,13 +50,12 @@ update_thread_entry:
 
 draw_thread_entry:
 ;;; Start customized code
-
-	; check if we're actively running the twist scroller
-	cmp.b	#1,draw_phase
-	bne.s	.not_twist
-	bsr.s	twist_draw
-.not_twist:
-
+	move.l	draw_routine,a0
+	moveq.l	#0,d0
+	cmpa.l	d0,a0
+	beq.s	.done_draw
+	jsr	(a0)
+.done_draw:
 ;;; End customized code
 
 	; Block this thread until it's ready again
@@ -67,24 +70,52 @@ draw_thread_entry:
 
 main_thread_entry:
 ;;; Start customized code
-	tst.b	compute_phase
-	bne.s	not_twist
-	bsr	twist_compute
-	bra.s	done_phase
-not_twist:
-	cmp.b	#1,compute_phase
-	bne.s	done_phase
-	nop
-done_phase:
+	move.l	#twist_compute,compute_routine
+.main_thread_loop:
+	move.l	compute_routine,a0
+	moveq.l	#0,d0
+	cmpa.l	d0,a0
+	beq.s	.wait_for_draw_code
+	jsr	(a0)
+	bra.s	.done_compute
+.wait_for_draw_code:
+	move.b	draw_wait_phase,d0
+	tst.b	d0
+	beq.s	.done_compute
+	cmp.b	draw_phase,d0
+	bhi.s	.done_compute
+	addq.b	#1,compute_phase
+	move.l	compute_wait_routine,a0
+	move.l	a0,compute_routine
+	jsr	(a0)
+.done_compute:
+	bra.s	.main_thread_loop
 ;;; End customized code
 
 	bra.s	main_thread_entry
 
 ;;; Start customized code
 	.bss
+	.even
+update_routine:
+	ds.l	1
+update_wait_routine:
+	ds.l	1
+draw_routine:
+	ds.l	1
+draw_wait_routine:
+	ds.l	1
+compute_routine:
+	ds.l	1
+compute_wait_routine:
+	ds.l	1
 draw_phase:
 	ds.b	1
 compute_phase:
+	ds.b	1
+draw_wait_phase:
+	ds.b	1
+compute_wait_phase:
 	ds.b	1
 
 	.even

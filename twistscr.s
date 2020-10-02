@@ -154,6 +154,10 @@ twist_draw:
 	rts
 
 twist_compute:
+	move.b	#1,compute_wait_phase
+	move.l	#twist_update,update_wait_routine
+	move.l	#twist_draw,draw_wait_routine
+
 	move.l	#twist_y1,front_drawn_data
 	move.l	#twist_y2,front_to_draw_data
 	move.l	#twist_y3,back_drawn_data
@@ -193,6 +197,7 @@ twist_compute:
 
 	move.w	#$707,$ffff8242.w
 	move.b	#1,compute_phase
+	clr.l	compute_routine
 	rts
 
 	.data
