@@ -25,19 +25,19 @@ core_thr_setup:
 	suba.w	#64,a0				; D0-A6, USP
 	move.l	a0,music_thread_current_stack
 
-	lea.l	update_thread_stack_top,a0
-	move.l	#update_thread_entry,-(a0)	; PC
-	move.w	#$2300,-(a0)			; SR
-	suba.w	#64,a0				; D0-A6, USP
-	move.l	a0,update_thread_current_stack
-
 	lea.l	draw_thread_stack_top,a0
 	move.l	#draw_thread_entry,-(a0)	; PC
 	move.w	#$2300,-(a0)			; SR
 	suba.w	#64,a0				; D0-A6, USP
 	move.l	a0,draw_thread_current_stack
 
-	move.l	#main_thread_current_stack,current_thread
+	lea.l	main_thread_stack_top,a0
+	move.l	#main_thread_entry,-(a0)	; PC
+	move.w	#$2300,-(a0)			; SR
+	suba.w	#64,a0				; D0-A6, USP
+	move.l	a0,main_thread_current_stack
+
+	move.l	#update_thread_current_stack,current_thread
 
 	rts
 
