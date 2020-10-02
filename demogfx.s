@@ -14,6 +14,31 @@
 
 	.text
 
+compute_thread_entry:
+;;; Start customized code
+	move.l	#twist_compute,compute_routine
+.compute_thread_loop:
+	move.l	compute_routine,a0
+	moveq.l	#0,d0
+	cmpa.l	d0,a0
+	beq.s	.wait_for_draw_code
+	jsr	(a0)
+	bra.s	.done_compute
+.wait_for_draw_code:
+	move.b	draw_wait_phase,d0
+	tst.b	d0
+	beq.s	.done_compute
+	cmp.b	draw_phase,d0
+	bhi.s	.done_compute
+	addq.b	#1,compute_phase
+	move.l	compute_wait_routine,a0
+	move.l	a0,compute_routine
+	jsr	(a0)
+.done_compute:
+	bra.s	.compute_thread_loop
+;;; End customized code
+	bra.s	compute_thread_entry
+
 update_thread_entry:
 ;;; Start customized code
 	move.l	update_routine,a0
@@ -67,32 +92,6 @@ draw_thread_entry:
 	clr.b	draw_thread_ready
 	jsr	switch_threads
 	bra.s	draw_thread_entry
-
-main_thread_entry:
-;;; Start customized code
-	move.l	#twist_compute,compute_routine
-.main_thread_loop:
-	move.l	compute_routine,a0
-	moveq.l	#0,d0
-	cmpa.l	d0,a0
-	beq.s	.wait_for_draw_code
-	jsr	(a0)
-	bra.s	.done_compute
-.wait_for_draw_code:
-	move.b	draw_wait_phase,d0
-	tst.b	d0
-	beq.s	.done_compute
-	cmp.b	draw_phase,d0
-	bhi.s	.done_compute
-	addq.b	#1,compute_phase
-	move.l	compute_wait_routine,a0
-	move.l	a0,compute_routine
-	jsr	(a0)
-.done_compute:
-	bra.s	.main_thread_loop
-;;; End customized code
-
-	bra.s	main_thread_entry
 
 ;;; Start customized code
 	.bss
