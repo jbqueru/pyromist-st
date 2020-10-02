@@ -116,8 +116,9 @@ The following threads are supported, in order from highest priority:
 
 1. Music thread. Running on a 50Hz timer, regardless of frame rate.
 2. Update thread. As a special thread, it gets unblocked at each VBL,
-and is expected to run in less than the duration of a frame.
+and is expected to run in less than the duration of a frame. This is
+inherited from the original thread.
 3. Draw thread. As a special thread, it is tied to the page-flipping
 logic in the VBL itself.
-4. Background thread. Never expected to block, it uses all the leftover
-CPU time from the other thread. This is the main thread.
+4. Compute thread. Never expected to block, it uses all the leftover
+CPU time from the other thread.

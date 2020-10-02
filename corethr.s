@@ -31,11 +31,11 @@ core_thr_setup:
 	suba.w	#64,a0				; D0-A6, USP
 	move.l	a0,draw_thread_current_stack
 
-	lea.l	main_thread_stack_top,a0
-	move.l	#main_thread_entry,-(a0)	; PC
+	lea.l	compute_thread_stack_top,a0
+	move.l	#compute_thread_entry,-(a0)	; PC
 	move.w	#$2300,-(a0)			; SR
 	suba.w	#64,a0				; D0-A6, USP
-	move.l	a0,main_thread_current_stack
+	move.l	a0,compute_thread_current_stack
 
 	move.l	#update_thread_current_stack,current_thread
 
@@ -68,11 +68,11 @@ switch_and_return:
 	bra.s	.thread_selected
 .try_draw_thread:
 	tst.b	draw_thread_ready
-	beq.s	.use_main_thread
+	beq.s	.use_compute_thread
 	lea.l	draw_thread_current_stack,a0
 	bra.s	.thread_selected
-.use_main_thread:
-	lea.l	main_thread_current_stack,a0
+.use_compute_thread:
+	lea.l	compute_thread_current_stack,a0
 .thread_selected:
 	move.l	(a0),sp
 	move.l	a0,current_thread
@@ -113,11 +113,11 @@ draw_thread_ready:
 	ds.b	1
 
 	.even
-main_thread_current_stack:
+compute_thread_current_stack:
 	ds.l	1
-main_thread_stack_bottom:
+compute_thread_stack_bottom:
 	ds.b	1024
-main_thread_stack_top:
+compute_thread_stack_top:
 
 	.even
 current_thread:

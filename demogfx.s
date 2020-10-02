@@ -14,11 +14,16 @@
 
 	.text
 
+compute_thread_entry:
+;;; Start customized code
+	nop
+;;; End customized code
+	bra.s	compute_thread_entry
+
 update_thread_entry:
 ;;; Start customized code
 	nop
 ;;; End customized code
-
 	; Unblock draw thread, block this thread until it's ready again
 	move.w	#$2700,sr
 	move.l	next_to_update,most_recently_updated
@@ -35,7 +40,6 @@ draw_thread_entry:
 ;;; Start customized code
 	nop
 ;;; End customized code
-
 	; Block this thread until it's ready again
 	move.w	#$2700,sr
 	move.l	back_drawn_data,-(sp)
@@ -45,10 +49,3 @@ draw_thread_entry:
 	clr.b	draw_thread_ready
 	jsr	switch_threads
 	bra.s	draw_thread_entry
-
-main_thread_entry:
-;;; Start customized code
-	nop
-;;; End customized code
-
-	bra.s	main_thread_entry
