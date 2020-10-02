@@ -43,7 +43,11 @@ update_thread_entry:
 	move.b	#1,draw_thread_ready
 	clr.b	update_thread_ready
 	jsr	switch_threads
-	bra.s	update_thread_entry
+; Check for a keypress
+; NOTE: would be good to do that with an interrupt handler, but I'm lazy
+	cmp.b	#$39,$fffffc02.w
+	bne.s	update_thread_entry
+	rts
 
 draw_thread_entry:
 ;;; Start customized code
@@ -188,7 +192,6 @@ draw_thread_entry:
 	bra	draw_thread_entry
 
 main_thread_entry:
-main_loop:
 ;;; Start customized code
 	tst.b	demo_phase
 	bne	not_twist
@@ -239,14 +242,7 @@ not_twist:
 done_phase:
 ;;; End customized code
 
-; Check for a keypress
-; NOTE: would be good to do that with an interrupt handler, but I'm lazy
-; TODO: this should on a higher-priority thread, but it also needs to be
-;	on this thread in order to be able to return.
-;	Might need to reconsider which thread is the main thread.
-	cmp.b	#$39,$fffffc02.w
-	bne	main_loop
-	rts
+	bra	main_thread_entry
 
 ;;; Start customized code
 	.data

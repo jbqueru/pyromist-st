@@ -82,7 +82,7 @@ core_main:
 	move.l	sp,save_sp
 
 	; Set up our stack
-	lea.l	main_thread_stack_top,sp
+	lea.l	update_thread_stack_top,sp
 
 	; Invoke real code
 	bsr.s	core_main_inner
@@ -113,7 +113,7 @@ core_main_inner:
 	bsr	core_thr_setup
 	bsr	core_int_activate
 
-	bsr	main_thread_entry
+	bsr	update_thread_entry
 
 	bsr	core_int_deactivate
 	bsr	core_gfx_restore
