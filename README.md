@@ -7,7 +7,7 @@ This includes basic machine setup, a multithreader, and handling
 of framebuffer swapping.
 
 Since I don't have access to actual hardware, this is being developed
-on Hatari (currently v2.1.0) with EmuTOS (0.9.12, 192k US), using
+on Hatari (currently v2.2.1) with EmuTOS (0.9.12, 192k US), using
 RMAC as the assembler.
 
 My Hatari configuration:
