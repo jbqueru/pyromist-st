@@ -16,8 +16,8 @@
 
 compute_thread_entry:
 ;;; Start customized code
-	; Init: run the twist scroller's precompute code
-	move.l	#twist_compute,compute_routine
+	; Init: run the waveform's precompute code
+	move.l	#wave_compute,compute_routine
 .compute_thread_loop:
 	move.l	compute_routine,a0
 	cmpa.l	#0,a0
@@ -117,5 +117,6 @@ heap:
 heap2:
 	ds.b	307200	; 150 frames of 64*64
 
-	.include "twistscr.s"
+;	.include "twistscr.s"
+	.include "waveform.s"
 ;;; End customized code
