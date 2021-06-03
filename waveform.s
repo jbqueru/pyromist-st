@@ -1,4 +1,4 @@
-;   Copyright 2020 Jean-Baptiste M. "JBQ" "Djaybee" Queru
+;   Copyright 2021 Jean-Baptiste M. "JBQ" "Djaybee" Queru
 ;
 ;   Licensed under the Apache License, Version 2.0 (the "License");
 ;   you may not use this file except in compliance with the License.
@@ -18,21 +18,33 @@ wave_update:
 	move.l	most_recently_updated,a5
 	move.l	next_to_update,a6
 
-	; move by 1 line
+	; advance 1 frame
 	move.w	(a5),d0
 	addq.w	#1,d0
-	cmp.w	#1088,d0 ; TODO: write proper code to handle text length
+	cmp.w	#1024,d0
 	bne.s	.in_range
-	moveq.l	#0,d0 ; TODO: move to next phase instead of wrapping
 	move.b	#2,draw_phase
 .in_range:
 	move.w	d0,(a6)
 	rts
 
 wave_draw:
-	; handle the scroll by skipping lines
-	; d7 = position in scroller = lines to skip in whole scroller
 	move.l	back_to_draw_data,a6
+
+	move.l	back_buffer,a0
+	move.l	#wave_gfx,a1
+	move.w	(a6),d0
+	andi.w	#120,d0
+	adda.w	d0,a1
+
+	move.w	#12,d0
+.copy_line:
+	move.w	(a1)+,(a0)+
+	move.w	(a1)+,(a0)+
+	move.w	(a1)+,(a0)+
+	move.w	(a1)+,(a0)+
+	adda.w	#152,a0
+	dbra.w	d0,.copy_line
 
 	rts
 
@@ -48,13 +60,53 @@ wave_compute:
 	move.l	back_to_draw_data,most_recently_updated
 	move.l	back_to_draw_data,next_to_update
 
+	move.w	#$700,$ffff8242.w
+	move.w	#$740,$ffff8244.w
+	move.w	#$770,$ffff8246.w
+	move.w	#$070,$ffff8248.w
+	move.w	#$077,$ffff824a.w
+	move.w	#$007,$ffff824c.w
+	move.w	#$707,$ffff824e.w
+
 	move.b	#1,compute_phase
 	clr.l	compute_routine
 	rts
 
 	.data
-
 	.even
+wave_gfx:
+	dc.w	$fff,0,0,0
+	dc.w	$fff,0,0,0
+	dc.w	0,$fff,0,0
+	dc.w	0,$fff,0,0
+	dc.w	$fff,$fff,0,0
+	dc.w	$fff,$fff,0,0
+	dc.w	$fff,$fff,0,0
+	dc.w	0,0,$fff,0
+	dc.w	0,0,$fff,0
+	dc.w	$fff,0,$fff,0
+	dc.w	$fff,0,$fff,0
+	dc.w	0,$fff,$fff,0
+	dc.w	0,$fff,$fff,0
+	dc.w	0,$fff,$fff,0
+	dc.w	$fff,$fff,$fff,0
+	dc.w	$fff,$fff,$fff,0
+	dc.w	$fff,0,0,0
+	dc.w	$fff,0,0,0
+	dc.w	0,$fff,0,0
+	dc.w	0,$fff,0,0
+	dc.w	$fff,$fff,0,0
+	dc.w	$fff,$fff,0,0
+	dc.w	$fff,$fff,0,0
+	dc.w	0,0,$fff,0
+	dc.w	0,0,$fff,0
+	dc.w	$fff,0,$fff,0
+	dc.w	$fff,0,$fff,0
+	dc.w	0,$fff,$fff,0
+	dc.w	0,$fff,$fff,0
+	dc.w	0,$fff,$fff,0
+	dc.w	$fff,$fff,$fff,0
+	dc.w	$fff,$fff,$fff,0
 
 	.bss
 	.even
