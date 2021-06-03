@@ -54,21 +54,32 @@ wave_update:
 
 wave_draw:
 	move.l	back_to_draw_data,a6
+	move.w	(a6),d0
 
 	move.l	back_buffer,a0
-	move.l	#wave_gfx,a1
-	move.w	(a6),d0
-	andi.w	#120,d0
-	adda.w	d0,a1
 
-	move.w	#12,d0
+	move.w	#12,d7		; elements in a column
+	move.w	d0,d1
+
+.copy_element:
+	move.w	d1,d2
+	andi.w	#120,d2
+
+	move.l	#wave_gfx,a1
+	adda.w	d2,a1
+
+	move.w	#12,d6
 .copy_line:
 	move.w	(a1)+,(a0)+
 	move.w	(a1)+,(a0)+
 	move.w	(a1)+,(a0)+
 	move.w	(a1)+,(a0)+
 	adda.w	#152,a0
-	dbra.w	d0,.copy_line
+	dbra.w	d6,.copy_line
+
+	adda.w	#320,a0
+	add.w	d0,d1
+	dbra.w	d7,.copy_element
 
 	rts
 
