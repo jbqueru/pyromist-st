@@ -14,6 +14,30 @@
 
 	.text
 
+wave_compute:
+	move.b	#1,compute_wait_phase
+	move.l	#wave_update,update_wait_routine
+	move.l	#wave_draw,draw_wait_routine
+
+	move.l	#wave_f1,front_drawn_data
+	move.l	#wave_f2,front_to_draw_data
+	move.l	#wave_f3,back_drawn_data
+	move.l	#wave_f4,back_to_draw_data
+	move.l	back_to_draw_data,most_recently_updated
+	move.l	back_to_draw_data,next_to_update
+
+	move.w	#$700,$ffff8242.w
+	move.w	#$740,$ffff8244.w
+	move.w	#$770,$ffff8246.w
+	move.w	#$070,$ffff8248.w
+	move.w	#$077,$ffff824a.w
+	move.w	#$007,$ffff824c.w
+	move.w	#$707,$ffff824e.w
+
+	move.b	#1,compute_phase
+	clr.l	compute_routine
+	rts
+
 wave_update:
 	move.l	most_recently_updated,a5
 	move.l	next_to_update,a6
@@ -46,30 +70,6 @@ wave_draw:
 	adda.w	#152,a0
 	dbra.w	d0,.copy_line
 
-	rts
-
-wave_compute:
-	move.b	#1,compute_wait_phase
-	move.l	#wave_update,update_wait_routine
-	move.l	#wave_draw,draw_wait_routine
-
-	move.l	#wave_f1,front_drawn_data
-	move.l	#wave_f2,front_to_draw_data
-	move.l	#wave_f3,back_drawn_data
-	move.l	#wave_f4,back_to_draw_data
-	move.l	back_to_draw_data,most_recently_updated
-	move.l	back_to_draw_data,next_to_update
-
-	move.w	#$700,$ffff8242.w
-	move.w	#$740,$ffff8244.w
-	move.w	#$770,$ffff8246.w
-	move.w	#$070,$ffff8248.w
-	move.w	#$077,$ffff824a.w
-	move.w	#$007,$ffff824c.w
-	move.w	#$707,$ffff824e.w
-
-	move.b	#1,compute_phase
-	clr.l	compute_routine
 	rts
 
 	.data
