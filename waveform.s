@@ -52,34 +52,173 @@ wave_update:
 	move.w	d0,(a6)
 	rts
 
+; d0: increment
+; d1: row start
+; d2: current cell
+; d3
+; d4: data 1
+; d5: data 2
+; d6: loop x
+; d7; loop y
+; a0: write 1 (top left)
+; a1: write 2 (top right)
+; a2: write 3 (bottom left)
+; a3: write 4 (bottom right)
+; a4: read graphics
 wave_draw:
 	move.l	back_to_draw_data,a6
 	move.w	(a6),d0
 
 	move.l	back_buffer,a0
+	move.l	a0,a1
+	move.l	a0,a2
+	move.l	a0,a3
+	adda.w	#13832,a0
+	adda.w	#13840,a1
+	adda.w	#16392,a2
+	adda.w	#16400,a3
 
-	move.w	#12,d7		; elements in a column
+	move.w	#5,d7		; elements in a column
 	move.w	d0,d1
+.copy_row:
+	move.w	#5,d6		; elements in a row
+	move.w	d1,d2
 
 .copy_element:
-	move.w	d1,d2
-	andi.w	#120,d2
+	move.w	d2,d3
+	lsr.w	#1,d3
+	andi.w	#120,d3
 
-	move.l	#wave_gfx,a1
-	adda.w	d2,a1
+	move.l	#wave_gfx,a4
+	adda.w	d3,a4
 
-	move.w	#12,d6
-.copy_line:
-	move.w	(a1)+,(a0)+
-	move.w	(a1)+,(a0)+
-	move.w	(a1)+,(a0)+
-	move.w	(a1)+,(a0)+
-	adda.w	#152,a0
-	dbra.w	d6,.copy_line
+	move.l	(a4)+,d4
+	move.l	(a4)+,d5
+	swap.w	d5
+	move.l	d4,(a0)
+	move.w	d5,4(a0)
+	move.l	d4,1760(a0)
+	move.w	d5,1764(a0)
+	move.l	d4,(a1)
+	move.w	d5,4(a1)
+	move.l	d4,1760(a1)
+	move.w	d5,1764(a1)
+	move.l	d4,(a2)
+	move.w	d5,4(a2)
+	move.l	d4,1760(a2)
+	move.w	d5,1764(a2)
+	move.l	d4,(a3)
+	move.w	d5,4(a3)
+	move.l	d4,1760(a3)
+	move.w	d5,1764(a3)
+	move.l	(a4)+,d4
+	move.l	(a4)+,d5
+	swap.w	d5
+	move.l	d4,160(a0)
+	move.w	d5,164(a0)
+	move.l	d4,1600(a0)
+	move.w	d5,1604(a0)
+	move.l	d4,160(a1)
+	move.w	d5,164(a1)
+	move.l	d4,1600(a1)
+	move.w	d5,1604(a1)
+	move.l	d4,160(a2)
+	move.w	d5,164(a2)
+	move.l	d4,1600(a2)
+	move.w	d5,1604(a2)
+	move.l	d4,160(a3)
+	move.w	d5,164(a3)
+	move.l	d4,1600(a3)
+	move.w	d5,1604(a3)
+	move.l	(a4)+,d4
+	move.l	(a4)+,d5
+	swap.w	d5
+	move.l	d4,320(a0)
+	move.w	d5,324(a0)
+	move.l	d4,1440(a0)
+	move.w	d5,1444(a0)
+	move.l	d4,320(a1)
+	move.w	d5,324(a1)
+	move.l	d4,1440(a1)
+	move.w	d5,1444(a1)
+	move.l	d4,320(a2)
+	move.w	d5,324(a2)
+	move.l	d4,1440(a2)
+	move.w	d5,1444(a2)
+	move.l	d4,320(a3)
+	move.w	d5,324(a3)
+	move.l	d4,1440(a3)
+	move.w	d5,1444(a3)
+	move.l	(a4)+,d4
+	move.l	(a4)+,d5
+	swap.w	d5
+	move.l	d4,480(a0)
+	move.w	d5,484(a0)
+	move.l	d4,1280(a0)
+	move.w	d5,1284(a0)
+	move.l	d4,480(a1)
+	move.w	d5,484(a1)
+	move.l	d4,1280(a1)
+	move.w	d5,1284(a1)
+	move.l	d4,480(a2)
+	move.w	d5,484(a2)
+	move.l	d4,1280(a2)
+	move.w	d5,1284(a2)
+	move.l	d4,480(a3)
+	move.w	d5,484(a3)
+	move.l	d4,1280(a3)
+	move.w	d5,1284(a3)
+	move.l	(a4)+,d4
+	move.l	(a4)+,d5
+	swap.w	d5
+	move.l	d4,640(a0)
+	move.w	d5,644(a0)
+	move.l	d4,1120(a0)
+	move.w	d5,1124(a0)
+	move.l	d4,640(a1)
+	move.w	d5,644(a1)
+	move.l	d4,1120(a1)
+	move.w	d5,1124(a1)
+	move.l	d4,640(a2)
+	move.w	d5,644(a2)
+	move.l	d4,1120(a2)
+	move.w	d5,1124(a2)
+	move.l	d4,640(a3)
+	move.w	d5,644(a3)
+	move.l	d4,1120(a3)
+	move.w	d5,1124(a3)
+	move.l	(a4)+,d4
+	move.l	(a4)+,d5
+	swap.w	d5
+	move.l	d4,800(a0)
+	move.w	d5,804(a0)
+	move.l	d4,960(a0)
+	move.w	d5,964(a0)
+	move.l	d4,800(a1)
+	move.w	d5,804(a1)
+	move.l	d4,960(a1)
+	move.w	d5,964(a1)
+	move.l	d4,800(a2)
+	move.w	d5,804(a2)
+	move.l	d4,960(a2)
+	move.w	d5,964(a2)
+	move.l	d4,800(a3)
+	move.w	d5,804(a3)
+	move.l	d4,960(a3)
+	move.w	d5,964(a3)
 
-	adda.w	#320,a0
+	subq.l	#8,a0
+	addq.l	#8,a1
+	subq.l	#8,a2
+	addq.l	#8,a3
+	add.w	d0,d2
+	dbra.w	d6,.copy_element
+	sub.w	#2512,a0
+	sub.w	#2608,a1
+	add.w	#2608,a2
+	add.w	#2512,a3
 	add.w	d0,d1
-	dbra.w	d7,.copy_element
+	dbra.w	d7,.copy_row
 
 	rts
 
