@@ -78,10 +78,10 @@ wave_compute:
 
 ;;; Set palette
 	lea.l	$ffff8242.w,a0
-	move.w	#$733,(a0)+
-	move.l	#$7410660,(a0)+
+	move.w	#$711,(a0)+
+	move.l	#$7400660,(a0)+
 	move.l	#$0700166,(a0)+
-	move.l	#$3370727,(a0)+
+	move.l	#$2270717,(a0)+
 	move.l	#$7770777,d0
 	move.l	d0,(a0)+
 	move.l	d0,(a0)+
