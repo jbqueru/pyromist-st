@@ -95,6 +95,46 @@ wave_compute:
 	dbra.w	d6,.generate_row
 	dbra.w	d7,.generate_image
 
+;;; Precompute cubes
+	lea.l	heap+18432,a0
+	moveq.l	#127,d7
+
+	lea.l	wave_sine,a1
+
+.cube_frame:
+; x = x0 * cos(a) - y0 * sin(a)
+
+
+; y = y0 * cos(a) + x0 * sin(a)
+
+	move.w	#2172,d1	; y0, 2*256*3*sqrt(2)
+
+	move.w	d7,d5
+	add.w	#32,d5
+	andi.w	#127,d5
+	add.w	d5,d5
+	muls	(a1,d5.w),d1	; * cos(a)
+
+	move.w	#2172,d4	; x0
+
+	move.w	d7,d5
+	add.w	d5,d5
+	muls	(a1,d5.w),d4	; * sin(a)
+
+	add.l	d4,d1		; y
+
+
+
+
+
+	swap.w	d1
+	add.w	#1920,d1	; 7.5*256
+	asr.w	#8,d1
+	add.w	d1,d1
+	move.w	#-1,(a0,d1.w)
+	adda.w	#32,a0
+	dbra.w	d7,.cube_frame
+
 ;;; Set palette
 	lea.l	$ffff8242.w,a0
 	move.w	#$711,(a0)+
@@ -338,7 +378,15 @@ wave_draw:
 .cube_row:
 	moveq.l	#11,d6
 .cube_column:
-	lea.l	wave_cube,a1
+;	lea.l	wave_cube,a1
+	lea.l	heap+18432,a1
+
+	move.l	back_to_draw_data,a6
+	move.w	(a6),d0
+	andi.w	#127,d0
+	lsl.w	#5,d0
+	adda.w	d0,a1
+
 	move.w	(a1)+,(a0)
 	move.w	(a1)+,160(a0)
 	move.w	(a1)+,320(a0)
@@ -387,6 +435,29 @@ wave_sphere:
 	dc.b	0,0,0,0,115,112,112,115,0,0,0,0
 
 	.even
+; Sine curve, 128 steps, scaled by 32767
+; computed in Google Sheets
+; =ROUND(SIN(2*PI()*$A24/128)*32767)
+; MORE: easy to unfold, especially if offset a tiny bit.
+wave_sine:
+	dc.w	0,1608,3212,4808,6393,7962,9512,11039
+	dc.w	12539,14010,15446,16846,18204,19519,20787,22005
+	dc.w	23170,24279,25329,26319,27245,28105,28898,29621
+	dc.w	30273,30852,31356,31785,32137,32412,32609,32728
+	dc.w	32767,32728,32609,32412,32137,31785,31356,30852
+	dc.w	30273,29621,28898,28105,27245,26319,25329,24279
+	dc.w	23170,22005,20787,19519,18204,16846,15446,14010
+	dc.w	12539,11039,9512,7962,6393,4808,3212,1608
+	dc.w	0,-1608,-3212,-4808,-6393,-7962,-9512,-11039
+	dc.w	-12539,-14010,-15446,-16846,-18204,-19519,-20787,-22005
+	dc.w	-23170,-24279,-25329,-26319,-27245,-28105,-28898,-29621
+	dc.w	-30273,-30852,-31356,-31785,-32137,-32412,-32609,-32728
+	dc.w	-32767,-32728,-32609,-32412,-32137,-31785,-31356,-30852
+	dc.w	-30273,-29621,-28898,-28105,-27245,-26319,-25329,-24279
+	dc.w	-23170,-22005,-20787,-19519,-18204,-16846,-15446,-14010
+	dc.w	-12539,-11039,-9512,-7962,-6393,-4808,-3212,-1608
+
+
 wave_cube:
 	dcb.w	16,0
 	dc.w	$0
