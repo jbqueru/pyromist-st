@@ -41,7 +41,7 @@ wave_compute:
 	lea.l	heap,a0
 	move.w	#255,d7		; generate 256 images
 .generate_image:
-	moveq.l	#5,d6		; 6 rows per image
+	moveq.l	#11,d6		; 12 rows per image
 	lea.l	wave_sphere,a1
 .generate_row:
 	moveq.l	#11,d5		; 12 active pixels per row
@@ -53,7 +53,7 @@ wave_compute:
 	move.b	(a1)+,d3
 	tst.b	d3		; 0 in input = black/trasparent
 	beq.s	.computed_pixel
-	add.b	d7,d3		; add byte, wraparound, still 0-255
+	sub.b	d7,d3		; sub byte, wraparound, still 0-255
 	mulu.w	#1799,d3	; 0-456960 ($6FFF9) (1799 = 65536*7/255)
 	swap.w	d3		; 0-6
 	addq.w	#1,d3		; 1-7
@@ -78,9 +78,9 @@ wave_compute:
 
 ;;; Set palette
 	lea.l	$ffff8242.w,a0
-	move.w	#$611,(a0)+
-	move.l	#$6400550,(a0)+
-	move.l	#$0500155,(a0)+
+	move.w	#$711,(a0)+
+	move.l	#$7400660,(a0)+
+	move.l	#$0700166,(a0)+
 	move.l	#$2270717,(a0)+
 	move.l	#$7770777,d0
 	move.l	d0,(a0)+
@@ -159,128 +159,145 @@ wave_draw:
 ; Compute address of graphics to read (heap + frame % 256 * 36)
 	moveq.l	#0,d3
 	move.b	d2,d3
-	add.w	d3,d3		; x2
-	add.w	d3,d3		; x4
+	lsl.w	#3,d3		; x8
 	move.w	d3,d4
-	lsl.w	#3,d4		; x32
-	add.w	d4,d3		; x36
+	lsl.w	#3,d4		; x64
+	add.w	d4,d3		; x72
 	move.l	a5,a4
 	adda.w	d3,a4
 
 ; The graphics are mirrorred vertically, read once write twice
 	move.l	(a4)+,d4	; read gfx 1 (2 planes)
 	move.w	(a4)+,d5	; read gfx 2 (1 plane)
-	move.l	d4,(a0)		; write top line planes 0-1
-	move.w	d5,4(a0)	; write top line plane 2
-	move.l	d4,1760(a0)	; write bottom line planes 0-1
-	move.w	d5,1764(a0)	; write bottom line plane 2
+	move.l	d4,(a0)		; write planes 0-1
+	move.w	d5,4(a0)	; write plane 2
 	move.l	d4,(a1)		; repeat for other 3 quadrants
 	move.w	d5,4(a1)
-	move.l	d4,1760(a1)
-	move.w	d5,1764(a1)
 	move.l	d4,(a2)
 	move.w	d5,4(a2)
-	move.l	d4,1760(a2)
-	move.w	d5,1764(a2)
 	move.l	d4,(a3)
 	move.w	d5,4(a3)
-	move.l	d4,1760(a3)
-	move.w	d5,1764(a3)
 
-	move.l	(a4)+,d4	; unrolled 6 times
+	move.l	(a4)+,d4	; unrolled 12 times
 	move.w	(a4)+,d5
 	move.l	d4,160(a0)
 	move.w	d5,164(a0)
-	move.l	d4,1600(a0)
-	move.w	d5,1604(a0)
 	move.l	d4,160(a1)
 	move.w	d5,164(a1)
-	move.l	d4,1600(a1)
-	move.w	d5,1604(a1)
 	move.l	d4,160(a2)
 	move.w	d5,164(a2)
-	move.l	d4,1600(a2)
-	move.w	d5,1604(a2)
 	move.l	d4,160(a3)
 	move.w	d5,164(a3)
-	move.l	d4,1600(a3)
-	move.w	d5,1604(a3)
 
 	move.l	(a4)+,d4
 	move.w	(a4)+,d5
 	move.l	d4,320(a0)
 	move.w	d5,324(a0)
-	move.l	d4,1440(a0)
-	move.w	d5,1444(a0)
 	move.l	d4,320(a1)
 	move.w	d5,324(a1)
-	move.l	d4,1440(a1)
-	move.w	d5,1444(a1)
 	move.l	d4,320(a2)
 	move.w	d5,324(a2)
-	move.l	d4,1440(a2)
-	move.w	d5,1444(a2)
 	move.l	d4,320(a3)
 	move.w	d5,324(a3)
-	move.l	d4,1440(a3)
-	move.w	d5,1444(a3)
 
 	move.l	(a4)+,d4
 	move.w	(a4)+,d5
 	move.l	d4,480(a0)
 	move.w	d5,484(a0)
-	move.l	d4,1280(a0)
-	move.w	d5,1284(a0)
 	move.l	d4,480(a1)
 	move.w	d5,484(a1)
-	move.l	d4,1280(a1)
-	move.w	d5,1284(a1)
 	move.l	d4,480(a2)
 	move.w	d5,484(a2)
-	move.l	d4,1280(a2)
-	move.w	d5,1284(a2)
 	move.l	d4,480(a3)
 	move.w	d5,484(a3)
-	move.l	d4,1280(a3)
-	move.w	d5,1284(a3)
 
 	move.l	(a4)+,d4
 	move.w	(a4)+,d5
 	move.l	d4,640(a0)
 	move.w	d5,644(a0)
-	move.l	d4,1120(a0)
-	move.w	d5,1124(a0)
 	move.l	d4,640(a1)
 	move.w	d5,644(a1)
-	move.l	d4,1120(a1)
-	move.w	d5,1124(a1)
 	move.l	d4,640(a2)
 	move.w	d5,644(a2)
-	move.l	d4,1120(a2)
-	move.w	d5,1124(a2)
 	move.l	d4,640(a3)
 	move.w	d5,644(a3)
-	move.l	d4,1120(a3)
-	move.w	d5,1124(a3)
 
 	move.l	(a4)+,d4
 	move.w	(a4)+,d5
 	move.l	d4,800(a0)
 	move.w	d5,804(a0)
-	move.l	d4,960(a0)
-	move.w	d5,964(a0)
 	move.l	d4,800(a1)
 	move.w	d5,804(a1)
-	move.l	d4,960(a1)
-	move.w	d5,964(a1)
 	move.l	d4,800(a2)
 	move.w	d5,804(a2)
-	move.l	d4,960(a2)
-	move.w	d5,964(a2)
 	move.l	d4,800(a3)
 	move.w	d5,804(a3)
+
+	move.l	(a4)+,d4
+	move.w	(a4)+,d5
+	move.l	d4,960(a0)
+	move.w	d5,964(a0)
+	move.l	d4,960(a1)
+	move.w	d5,964(a1)
+	move.l	d4,960(a2)
+	move.w	d5,964(a2)
 	move.l	d4,960(a3)
 	move.w	d5,964(a3)
+
+	move.l	(a4)+,d4
+	move.w	(a4)+,d5
+	move.l	d4,1120(a0)
+	move.w	d5,1124(a0)
+	move.l	d4,1120(a1)
+	move.w	d5,1124(a1)
+	move.l	d4,1120(a2)
+	move.w	d5,1124(a2)
+	move.l	d4,1120(a3)
+	move.w	d5,1124(a3)
+
+	move.l	(a4)+,d4
+	move.w	(a4)+,d5
+	move.l	d4,1280(a0)
+	move.w	d5,1284(a0)
+	move.l	d4,1280(a1)
+	move.w	d5,1284(a1)
+	move.l	d4,1280(a2)
+	move.w	d5,1284(a2)
+	move.l	d4,1280(a3)
+	move.w	d5,1284(a3)
+
+	move.l	(a4)+,d4
+	move.w	(a4)+,d5
+	move.l	d4,1440(a0)
+	move.w	d5,1444(a0)
+	move.l	d4,1440(a1)
+	move.w	d5,1444(a1)
+	move.l	d4,1440(a2)
+	move.w	d5,1444(a2)
+	move.l	d4,1440(a3)
+	move.w	d5,1444(a3)
+
+	move.l	(a4)+,d4
+	move.w	(a4)+,d5
+	move.l	d4,1600(a0)
+	move.w	d5,1604(a0)
+	move.l	d4,1600(a1)
+	move.w	d5,1604(a1)
+	move.l	d4,1600(a2)
+	move.w	d5,1604(a2)
+	move.l	d4,1600(a3)
+	move.w	d5,1604(a3)
+
+	move.l	(a4)+,d4
+	move.w	(a4)+,d5
+	move.l	d4,1760(a0)
+	move.w	d5,1764(a0)
+	move.l	d4,1760(a1)
+	move.w	d5,1764(a1)
+	move.l	d4,1760(a2)
+	move.w	d5,1764(a2)
+	move.l	d4,1760(a3)
+	move.w	d5,1764(a3)
 
 	subq.l	#8,a0		; point to next item horizontally
 	addq.l	#8,a1
@@ -335,14 +352,20 @@ wave_draw:
 
 ; Sphere rotation data
 ; computed in Google Sheets
-; =round(ACOS((13-2*B$1)/12/SQRT(1-((13-2*$A2)/12)^2))*128/PI())
+; =round(ACOS((13-2*$A2)/12/SQRT(1-((13-2*B$1)/12)^2))*128/PI())
 wave_sphere:
-	dc.b	0,0,0,0,36,55,73,92,0,0,0,0
-	dc.b	0,0,20,36,48,59,69,80,92,108,0,0
-	dc.b	0,16,31,42,51,60,68,77,86,97,112,0
-	dc.b	0,24,36,45,53,60,68,75,83,92,104,0
-	dc.b	13,28,38,46,53,60,68,75,82,90,100,115
-	dc.b	16,29,39,46,54,61,67,74,82,89,99,112
+	dc.b	0,0,0,0,13,16,16,13,0,0,0,0
+	dc.b	0,0,16,24,28,29,29,28,24,16,0,0
+	dc.b	0,20,31,36,38,39,39,38,36,31,20,0
+	dc.b	0,36,42,45,46,46,46,46,45,42,36,0
+	dc.b	36,48,51,53,53,54,54,53,53,51,48,36
+	dc.b	55,59,60,60,60,61,61,60,60,60,59,55
+	dc.b	73,69,68,68,68,67,67,68,68,68,69,73
+	dc.b	92,80,77,75,75,74,74,75,75,77,80,92
+	dc.b	0,92,86,83,82,82,82,82,83,86,92,0
+	dc.b	0,108,97,92,90,89,89,90,92,97,108,0
+	dc.b	0,0,112,104,100,99,99,100,104,112,0,0
+	dc.b	0,0,0,0,115,112,112,115,0,0,0,0
 
 	.even
 wave_cube:
