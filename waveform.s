@@ -30,14 +30,24 @@ wave_compute:
 	move.w	#255,d7
 .generate_image:
 	moveq.l	#5,d6
+	lea.l	wave_sphere,a1
 .generate_row:
 	moveq.l	#11,d5
 	moveq.l	#0,d0
 	moveq.l	#0,d1
 	moveq.l	#0,d2
 .input_pixel:
-	move.w	d6,d3
-	add.w	d7,d3
+	moveq.l	#0,d3
+	move.b	(a1)+,d3
+	tst.b	d3
+	beq.s	.computed_pixel
+	add.b	d7,d3
+	mulu.w	#1792,d3
+	swap.w	d3
+	addq.w	#1,d3
+
+.computed_pixel:
+
 	lsr.w	d3
 	roxl.w	d0
 	lsr.w	d3
@@ -100,6 +110,8 @@ wave_update:
 ; a2: write 3 (bottom left)
 ; a3: write 4 (bottom right)
 ; a4: read graphics
+; a5: free
+; a6: free
 wave_draw:
 	move.l	back_to_draw_data,a6
 	move.w	(a6),d0
@@ -121,15 +133,14 @@ wave_draw:
 
 .copy_element:
 	move.w	d2,d3
-	lsr.w	#1,d3
-	andi.w	#120,d3
+	andi.w	#255,d3
+	mulu.w	#36,d3		; TODO: optimize
 
-	move.l	#wave_gfx,a4
+	lea.l	heap,a4		; TODO: cache, re-use
 	adda.w	d3,a4
 
 	move.l	(a4)+,d4
-	move.l	(a4)+,d5
-	swap.w	d5
+	move.w	(a4)+,d5
 	move.l	d4,(a0)
 	move.w	d5,4(a0)
 	move.l	d4,1760(a0)
@@ -147,8 +158,7 @@ wave_draw:
 	move.l	d4,1760(a3)
 	move.w	d5,1764(a3)
 	move.l	(a4)+,d4
-	move.l	(a4)+,d5
-	swap.w	d5
+	move.w	(a4)+,d5
 	move.l	d4,160(a0)
 	move.w	d5,164(a0)
 	move.l	d4,1600(a0)
@@ -166,8 +176,7 @@ wave_draw:
 	move.l	d4,1600(a3)
 	move.w	d5,1604(a3)
 	move.l	(a4)+,d4
-	move.l	(a4)+,d5
-	swap.w	d5
+	move.w	(a4)+,d5
 	move.l	d4,320(a0)
 	move.w	d5,324(a0)
 	move.l	d4,1440(a0)
@@ -185,8 +194,7 @@ wave_draw:
 	move.l	d4,1440(a3)
 	move.w	d5,1444(a3)
 	move.l	(a4)+,d4
-	move.l	(a4)+,d5
-	swap.w	d5
+	move.w	(a4)+,d5
 	move.l	d4,480(a0)
 	move.w	d5,484(a0)
 	move.l	d4,1280(a0)
@@ -204,8 +212,7 @@ wave_draw:
 	move.l	d4,1280(a3)
 	move.w	d5,1284(a3)
 	move.l	(a4)+,d4
-	move.l	(a4)+,d5
-	swap.w	d5
+	move.w	(a4)+,d5
 	move.l	d4,640(a0)
 	move.w	d5,644(a0)
 	move.l	d4,1120(a0)
@@ -223,8 +230,7 @@ wave_draw:
 	move.l	d4,1120(a3)
 	move.w	d5,1124(a3)
 	move.l	(a4)+,d4
-	move.l	(a4)+,d5
-	swap.w	d5
+	move.w	(a4)+,d5
 	move.l	d4,800(a0)
 	move.w	d5,804(a0)
 	move.l	d4,960(a0)
@@ -258,40 +264,16 @@ wave_draw:
 	rts
 
 	.data
-	.even
-wave_gfx:
-	dc.w	$fff,0,0,0
-	dc.w	$fff,0,0,0
-	dc.w	0,$fff,0,0
-	dc.w	0,$fff,0,0
-	dc.w	$fff,$fff,0,0
-	dc.w	$fff,$fff,0,0
-	dc.w	$fff,$fff,0,0
-	dc.w	0,0,$fff,0
-	dc.w	0,0,$fff,0
-	dc.w	$fff,0,$fff,0
-	dc.w	$fff,0,$fff,0
-	dc.w	0,$fff,$fff,0
-	dc.w	0,$fff,$fff,0
-	dc.w	0,$fff,$fff,0
-	dc.w	$fff,$fff,$fff,0
-	dc.w	$fff,$fff,$fff,0
-	dc.w	$fff,0,0,0
-	dc.w	$fff,0,0,0
-	dc.w	0,$fff,0,0
-	dc.w	0,$fff,0,0
-	dc.w	$fff,$fff,0,0
-	dc.w	$fff,$fff,0,0
-	dc.w	$fff,$fff,0,0
-	dc.w	0,0,$fff,0
-	dc.w	0,0,$fff,0
-	dc.w	$fff,0,$fff,0
-	dc.w	$fff,0,$fff,0
-	dc.w	0,$fff,$fff,0
-	dc.w	0,$fff,$fff,0
-	dc.w	0,$fff,$fff,0
-	dc.w	$fff,$fff,$fff,0
-	dc.w	$fff,$fff,$fff,0
+
+; computed in Google Sheets
+; =round(ACOS((13-2*B$1)/12/sqrt(1-((13-2*$A2)/12)^2))*128/PI())
+wave_sphere:
+	dc.b	0,0,0,0,36,55,73,92,0,0,0,0
+	dc.b	0,0,20,36,48,59,69,80,92,108,0,0
+	dc.b	0,16,31,42,51,60,68,77,86,97,112,0
+	dc.b	0,24,36,45,53,60,68,75,83,92,104,0
+	dc.b	13,28,38,46,53,60,68,75,82,90,100,115
+	dc.b	16,29,39,46,54,61,67,74,82,89,99,112
 
 	.bss
 	.even
