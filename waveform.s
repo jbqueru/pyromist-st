@@ -97,7 +97,7 @@ wave_compute:
 
 ;;; Precompute cubes
 ; d0-d2: x0/y0/z0
-; d3-d5: compute x/y/z (2 accumulators + 1 scratch)
+; d3-d5: compute x/y/z (2 accumulators + 1 trig scratch)
 ; d6: scratch for trig lookups
 ; d7: angles (alpha in low word, beta in high word) (!!!)
 	lea.l	wave_sine,a1
@@ -111,16 +111,18 @@ wave_compute:
 	move.w	#1086,d1	; y0
 	move.w	#1086,d2	; z0
 
+; rotate by alpha around z - d5 is trig scratch
+
 ; x = x0 * cos(alpha) - y0 * sin(alpha)
 	move.w	d0,d3		; x0
-	move.w	d7,d6		; alpha
+	move.l	d7,d6		; alpha
 	add.w	#32,d6
 	andi.w	#127,d6
 	add.w	d6,d6
 	muls	(a1,d6.w),d3	; x0 * cos(alpha) * 32k
 
 	move.w	d1,d5		; y0
-	move.w	d7,d6		; alpha
+	move.l	d7,d6		; alpha
 	add.w	d6,d6
 	muls	(a1,d6.w),d5	; y0 * sin(alpha) * 32k
 
@@ -130,14 +132,14 @@ wave_compute:
 
 ; y = y0 * cos(alpha) + x0 * sin(alpha)
 	move.w	d1,d4		; y0
-	move.w	d7,d6		; alpha
+	move.l	d7,d6		; alpha
 	add.w	#32,d6
 	andi.w	#127,d6
 	add.w	d6,d6
 	muls	(a1,d6.w),d4	; y0 * cos(alpha) * 32k
 
 	move.w	d0,d5		; x0
-	move.w	d7,d6		; alpha
+	move.l	d7,d6		; alpha
 	add.w	d6,d6
 	muls	(a1,d6.w),d5	; x0 * sin(alpha) * 32k
 
@@ -145,8 +147,134 @@ wave_compute:
 	add.l	d4,d4		; new y * 64k
 	swap.w	d4		; new y
 
-	move.w	d3,d0
-	move.w	d4,d1
+	move.w	d3,d0		; update x0
+	move.w	d4,d1		; update y0
+
+; rotate by beta around x - d3 is trig scratch
+
+; y = y0 * cos(beta) - z0 * sin(beta)
+	move.w	d1,d4		; y0
+	move.l	d7,d6
+	swap.w	d6		; beta
+	add.w	#32,d6
+	andi.w	#127,d6
+	add.w	d6,d6
+	muls	(a1,d6.w),d4	; y0 * cos(beta) * 32k
+
+	move.w	d2,d3		; z0
+	move.l	d7,d6
+	swap.w	d6		; beta
+	add.w	d6,d6
+	muls	(a1,d6.w),d3	; z0 * sin(beta) * 32k
+
+	sub.l	d3,d4		; new y * 32k
+	add.l	d4,d4		; new y * 64k
+	swap.w	d4		; new y
+
+; z = z0 * cos(beta) + y0 * sin(beta)
+	move.w	d2,d5		; z0
+	move.l	d7,d6
+	swap.w	d6		; beta
+	add.w	#32,d6
+	andi.w	#127,d6
+	add.w	d6,d6
+	muls	(a1,d6.w),d5	; z0 * cos(beta) * 32k
+
+	move.w	d1,d3		; y0
+	move.l	d7,d6
+	swap.w	d6		; beta
+	add.w	d6,d6
+	muls	(a1,d6.w),d3	; y0 * sin(beta) * 32k
+
+	add.l	d3,d5		; new z * 32k
+	add.l	d5,d5		; new z * 64k
+	swap.w	d5		; new z
+
+	move.w	d4,d1		; update y0
+	move.w	d5,d2		; update z0
+
+; rotate by alpha around y - d4 is trig scratch
+
+; z = z0 * cos(alpha) - x0 * sin(alpha)
+	move.w	d2,d5		; z0
+	move.l	d7,d6		; alpha
+	add.w	#32,d6
+	andi.w	#127,d6
+	add.w	d6,d6
+	muls	(a1,d6.w),d5	; z0 * cos(alpha) * 32k
+
+	move.w	d0,d4		; x0
+	move.l	d7,d6		; alpha
+	add.w	d6,d6
+	muls	(a1,d6.w),d4	; x0 * sin(alpha) * 32k
+
+	sub.l	d4,d5		; new z * 32k
+	add.l	d5,d5		; new z * 64k
+	swap.w	d5		; new z
+
+; x = x0 * cos(alpha) + z0 * sin(alpha)
+	move.w	d0,d3		; x0
+	move.l	d7,d6		; alpha
+	add.w	#32,d6
+	andi.w	#127,d6
+	add.w	d6,d6
+	muls	(a1,d6.w),d3	; x0 * cos(alpha) * 32k
+
+	move.w	d2,d4		; z0
+	move.l	d7,d6		; alpha
+	add.w	d6,d6
+	muls	(a1,d6.w),d4	; z0 * sin(alpha) * 32k
+
+	add.l	d4,d3		; new x * 32k
+	add.l	d3,d3		; new x * 64k
+	swap.w	d3		; new x
+
+	move.w	d5,d2		; update z0
+	move.w	d3,d0		; update x0
+
+; rotate by beta around z - d5 is trig scratch
+
+; x = x0 * cos(beta) - y0 * sin(beta)
+	move.w	d0,d3		; x0
+	move.l	d7,d6
+	swap.w	d6		; beta
+	add.w	#32,d6
+	andi.w	#127,d6
+	add.w	d6,d6
+	muls	(a1,d6.w),d3	; x0 * cos(beta) * 32k
+
+	move.w	d1,d5		; y0
+	move.l	d7,d6
+	swap.w	d6		; beta
+	add.w	d6,d6
+	muls	(a1,d6.w),d5	; y0 * sin(beta) * 32k
+
+	sub.l	d5,d3		; new x * 32k
+	add.l	d3,d3		; new x * 64k
+	swap.w	d3		; new x
+
+; y = y0 * cos(alpha) + x0 * sin(alpha)
+	move.w	d1,d4		; y0
+	move.l	d7,d6
+	swap.w	d6		; beta
+	add.w	#32,d6
+	andi.w	#127,d6
+	add.w	d6,d6
+	muls	(a1,d6.w),d4	; y0 * cos(beta) * 32k
+
+	move.w	d0,d5		; x0
+	move.l	d7,d6
+	swap.w	d6		; beta
+	add.w	d6,d6
+	muls	(a1,d6.w),d5	; x0 * sin(beta) * 32k
+
+	add.l	d5,d4		; new y * 32k
+	add.l	d4,d4		; new y * 64k
+	swap.w	d4		; new y
+
+	move.w	d3,d0		; update x0
+	move.w	d4,d1		; update y0
+
 
 
 	add.w	#2048,d0	; 7.5*256 (center) + 0.5*256 (nearest)
