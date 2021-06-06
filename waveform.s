@@ -15,6 +15,25 @@
 	.text
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Format of precomputed graphics for the waveform spheres
+;
+; heap offset 0
+; 256 bitmaps, 16*12 pixels, 3 bitplanes.
+; total 18432 bytes
+;;;;;;;;
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Format of precomputed graphics for the surrounding cubes
+;
+; heap offset 18432
+; 256*64 bitmaps, 16*16 pixels, 1 bitplane
+; total 524288 bytes
+; TODO: would 128*32 work?
+;;;;;;;;
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Precompute the graphics for the waveform spheres
 ;;;;;;;;
 wave_compute:
@@ -108,11 +127,11 @@ wave_update:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Draw the waveform spheres
 ;;;;;;;;
-; TODO: investigate whether drawing diagonally is faster
+; MORE: investigate whether drawing diagonally is faster
 ;	advantage is that each cell type gets read once (36 -> 11)
 ;	drawback is the complexity of updating pointers at end of row
 ;	maybe just precompute and store the offsets?
-; TODO: investigate whether code-generation is faster
+; MORE: investigate whether code-generation is faster
 ;	drawbacks are complexity and maybe more code
 ; d0: increment (between columns on 1st row / between rows on 1st column)
 ; d1: row start
@@ -149,14 +168,14 @@ wave_draw:
 	adda.w	#16392,a2
 	adda.w	#16400,a3
 
-	move.w	#5,d7		; elements in a column
+	move.w	#5,d7		; elements in a column (x2)
 	move.w	d0,d1
 .copy_row:
-	move.w	#5,d6		; elements in a row
+	move.w	#5,d6		; elements in a row (x2)
 	move.w	d1,d2
 
 .copy_element:
-; Compute address of graphics to read (heap + frame % 256 * 36)
+; Compute address of graphics to read (heap + frame % 256 * 72)
 	moveq.l	#0,d3
 	move.b	d2,d3
 	lsl.w	#3,d3		; x8
@@ -166,7 +185,7 @@ wave_draw:
 	move.l	a5,a4
 	adda.w	d3,a4
 
-; The graphics are mirrorred vertically, read once write twice
+; Draw 4 spheres
 	move.l	(a4)+,d4	; read gfx 1 (2 planes)
 	move.w	(a4)+,d5	; read gfx 2 (1 plane)
 	move.l	d4,(a0)		; write planes 0-1
@@ -352,7 +371,7 @@ wave_draw:
 
 ; Sphere rotation data
 ; computed in Google Sheets
-; =round(ACOS((13-2*$A2)/12/SQRT(1-((13-2*B$1)/12)^2))*128/PI())
+; =ROUND(ACOS((13-2*$A2)/12/SQRT(1-((13-2*B$1)/12)^2))*128/PI())
 wave_sphere:
 	dc.b	0,0,0,0,13,16,16,13,0,0,0,0
 	dc.b	0,0,16,24,28,29,29,28,24,16,0,0
