@@ -26,6 +26,35 @@ wave_compute:
 	move.l	back_to_draw_data,most_recently_updated
 	move.l	back_to_draw_data,next_to_update
 
+	lea.l	heap,a0
+	move.w	#255,d7
+.generate_image:
+	moveq.l	#5,d6
+.generate_row:
+	moveq.l	#11,d5
+	moveq.l	#0,d0
+	moveq.l	#0,d1
+	moveq.l	#0,d2
+.input_pixel:
+	move.w	d6,d3
+	add.w	d7,d3
+	lsr.w	d3
+	roxl.w	d0
+	lsr.w	d3
+	roxl.w	d1
+	lsr.w	d3
+	roxl.w	d2
+	dbra.w	d5,.input_pixel
+	lsl.w	#2,d0
+	lsl.w	#2,d1
+	lsl.w	#2,d2
+	move.w	d0,(a0)+
+	move.w	d1,(a0)+
+	move.w	d2,(a0)+
+	dbra.w	d6,.generate_row
+	dbra.w	d7,.generate_image
+
+; TODO: better palette
 	move.w	#$700,$ffff8242.w
 	move.w	#$740,$ffff8244.w
 	move.w	#$770,$ffff8246.w
@@ -45,17 +74,23 @@ wave_update:
 	; advance 1 frame
 	move.w	(a5),d0
 	addq.w	#1,d0
-	cmp.w	#1024,d0
-	bne.s	.in_range
-	move.b	#2,draw_phase
-.in_range:
+;	cmp.w	#1024,d0
+;	bne.s	.in_range
+;	move.b	#2,draw_phase
+;.in_range:
 	move.w	d0,(a6)
 	rts
 
+; TODO: investigate whether drawing diagonally is faster
+;	advantage is that each cell type gets read once (36 -> 11)
+;	drawback is the complexity of updating pointers at end of row
+;	maybe just precompute and store the offsets?
+; TODO: investigate whether code-generation is faster
+;	drawbacks are complexity and maybe more code
 ; d0: increment
 ; d1: row start
 ; d2: current cell
-; d3
+; d3: scratch
 ; d4: data 1
 ; d5: data 2
 ; d6: loop x

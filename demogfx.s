@@ -113,9 +113,10 @@ compute_wait_phase:
 
 	.even
 heap:
-	ds.b	221184
-heap2:
-	ds.b	307200	; 150 frames of 64*64
+	ds.b	600000
+
+; Heap layout:
+; Waveform: 18432 bytes at offset 0
 
 ;	.include "twistscr.s"
 	.include "waveform.s"
