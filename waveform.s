@@ -100,7 +100,7 @@ wave_compute:
 ; d3-d5: compute x/y/z (2 accumulators + 1 trig scratch)
 ; d6: scratch for trig lookups
 ; d7: angles (alpha in low word, beta in high word) (!!!)
-	lea.l	wave_sine,a1
+	lea.l	wave_sine,a6
 	lea.l	heap+18432,a0
 	move.w	#127,d7
 .cube_frame_beta:
@@ -119,12 +119,12 @@ wave_compute:
 	add.w	#32,d6
 	andi.w	#127,d6
 	add.w	d6,d6
-	muls	(a1,d6.w),d3	; x0 * cos(alpha) * 32k
+	muls	(a6,d6.w),d3	; x0 * cos(alpha) * 32k
 
 	move.w	d1,d5		; y0
 	move.l	d7,d6		; alpha
 	add.w	d6,d6
-	muls	(a1,d6.w),d5	; y0 * sin(alpha) * 32k
+	muls	(a6,d6.w),d5	; y0 * sin(alpha) * 32k
 
 	sub.l	d5,d3		; new x * 32k
 	add.l	d3,d3		; new x * 64k
@@ -136,12 +136,12 @@ wave_compute:
 	add.w	#32,d6
 	andi.w	#127,d6
 	add.w	d6,d6
-	muls	(a1,d6.w),d4	; y0 * cos(alpha) * 32k
+	muls	(a6,d6.w),d4	; y0 * cos(alpha) * 32k
 
 	move.w	d0,d5		; x0
 	move.l	d7,d6		; alpha
 	add.w	d6,d6
-	muls	(a1,d6.w),d5	; x0 * sin(alpha) * 32k
+	muls	(a6,d6.w),d5	; x0 * sin(alpha) * 32k
 
 	add.l	d5,d4		; new y * 32k
 	add.l	d4,d4		; new y * 64k
@@ -159,13 +159,13 @@ wave_compute:
 	add.w	#32,d6
 	andi.w	#127,d6
 	add.w	d6,d6
-	muls	(a1,d6.w),d4	; y0 * cos(beta) * 32k
+	muls	(a6,d6.w),d4	; y0 * cos(beta) * 32k
 
 	move.w	d2,d3		; z0
 	move.l	d7,d6
 	swap.w	d6		; beta
 	add.w	d6,d6
-	muls	(a1,d6.w),d3	; z0 * sin(beta) * 32k
+	muls	(a6,d6.w),d3	; z0 * sin(beta) * 32k
 
 	sub.l	d3,d4		; new y * 32k
 	add.l	d4,d4		; new y * 64k
@@ -178,13 +178,13 @@ wave_compute:
 	add.w	#32,d6
 	andi.w	#127,d6
 	add.w	d6,d6
-	muls	(a1,d6.w),d5	; z0 * cos(beta) * 32k
+	muls	(a6,d6.w),d5	; z0 * cos(beta) * 32k
 
 	move.w	d1,d3		; y0
 	move.l	d7,d6
 	swap.w	d6		; beta
 	add.w	d6,d6
-	muls	(a1,d6.w),d3	; y0 * sin(beta) * 32k
+	muls	(a6,d6.w),d3	; y0 * sin(beta) * 32k
 
 	add.l	d3,d5		; new z * 32k
 	add.l	d5,d5		; new z * 64k
@@ -201,12 +201,12 @@ wave_compute:
 	add.w	#32,d6
 	andi.w	#127,d6
 	add.w	d6,d6
-	muls	(a1,d6.w),d5	; z0 * cos(alpha) * 32k
+	muls	(a6,d6.w),d5	; z0 * cos(alpha) * 32k
 
 	move.w	d0,d4		; x0
 	move.l	d7,d6		; alpha
 	add.w	d6,d6
-	muls	(a1,d6.w),d4	; x0 * sin(alpha) * 32k
+	muls	(a6,d6.w),d4	; x0 * sin(alpha) * 32k
 
 	sub.l	d4,d5		; new z * 32k
 	add.l	d5,d5		; new z * 64k
@@ -218,12 +218,12 @@ wave_compute:
 	add.w	#32,d6
 	andi.w	#127,d6
 	add.w	d6,d6
-	muls	(a1,d6.w),d3	; x0 * cos(alpha) * 32k
+	muls	(a6,d6.w),d3	; x0 * cos(alpha) * 32k
 
 	move.w	d2,d4		; z0
 	move.l	d7,d6		; alpha
 	add.w	d6,d6
-	muls	(a1,d6.w),d4	; z0 * sin(alpha) * 32k
+	muls	(a6,d6.w),d4	; z0 * sin(alpha) * 32k
 
 	add.l	d4,d3		; new x * 32k
 	add.l	d3,d3		; new x * 64k
@@ -241,13 +241,13 @@ wave_compute:
 	add.w	#32,d6
 	andi.w	#127,d6
 	add.w	d6,d6
-	muls	(a1,d6.w),d3	; x0 * cos(beta) * 32k
+	muls	(a6,d6.w),d3	; x0 * cos(beta) * 32k
 
 	move.w	d1,d5		; y0
 	move.l	d7,d6
 	swap.w	d6		; beta
 	add.w	d6,d6
-	muls	(a1,d6.w),d5	; y0 * sin(beta) * 32k
+	muls	(a6,d6.w),d5	; y0 * sin(beta) * 32k
 
 	sub.l	d5,d3		; new x * 32k
 	add.l	d3,d3		; new x * 64k
@@ -260,13 +260,13 @@ wave_compute:
 	add.w	#32,d6
 	andi.w	#127,d6
 	add.w	d6,d6
-	muls	(a1,d6.w),d4	; y0 * cos(beta) * 32k
+	muls	(a6,d6.w),d4	; y0 * cos(beta) * 32k
 
 	move.w	d0,d5		; x0
 	move.l	d7,d6
 	swap.w	d6		; beta
 	add.w	d6,d6
-	muls	(a1,d6.w),d5	; x0 * sin(beta) * 32k
+	muls	(a6,d6.w),d5	; x0 * sin(beta) * 32k
 
 	add.l	d5,d4		; new y * 32k
 	add.l	d4,d4		; new y * 64k
