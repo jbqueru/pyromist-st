@@ -96,44 +96,52 @@ wave_compute:
 	dbra.w	d7,.generate_image
 
 ;;; Precompute cubes
-	lea.l	heap+18432,a0
-	moveq.l	#127,d7
-
+; d0-d2: x0/y0/z0
+; d3-d5: compute x/y/z (2 accumulators + 1 scratch)
+; d6: scratch for trig lookups
+; d7: angles (alpha in low word, beta in high word) (!!!)
 	lea.l	wave_sine,a1
-
-.cube_frame:
+	lea.l	heap+18432,a0
+	move.w	#127,d7
+.cube_frame_beta:
+	swap.w	d7
+	move.w	#127,d7
+.cube_frame_alpha:
 ; x = x0 * cos(a) - y0 * sin(a)
 	move.w	#2172,d0	; x0
+	move.w	#2172,d1	; y0
+	move.w	#2172,d2	; z0
 
-	move.w	d7,d5
-	add.w	#32,d5
-	andi.w	#127,d5
-	add.w	d5,d5
-	muls	(a1,d5.w),d0	; * cos(a)
+	move.w	d0,d3
+	move.w	d7,d6
+	add.w	#32,d6
+	andi.w	#127,d6
+	add.w	d6,d6
+	muls	(a1,d6.w),d3	; * cos(a)
 
-	move.w	#2172,d4	; y0
+	move.w	d1,d5	; y0
+	move.w	d7,d6
+	add.w	d6,d6
+	muls	(a1,d6.w),d5	; * sin(a)
 
-	move.w	d7,d5
-	add.w	d5,d5
-	muls	(a1,d5.w),d4	; * sin(a)
-
-	sub.l	d4,d0		; y
+	sub.l	d5,d3		; x
+	move.l	d3,d0
 
 ; y = y0 * cos(a) + x0 * sin(a)
 
 	move.w	#2172,d1	; y0, 2*256*3*sqrt(2)
 
-	move.w	d7,d5
-	add.w	#32,d5
-	andi.w	#127,d5
-	add.w	d5,d5
-	muls	(a1,d5.w),d1	; * cos(a)
+	move.w	d7,d6
+	add.w	#32,d6
+	andi.w	#127,d6
+	add.w	d6,d6
+	muls	(a1,d6.w),d1	; * cos(a)
 
 	move.w	#2172,d4	; x0
 
-	move.w	d7,d5
-	add.w	d5,d5
-	muls	(a1,d5.w),d4	; * sin(a)
+	move.w	d7,d6
+	add.w	d6,d6
+	muls	(a1,d6.w),d4	; * sin(a)
 
 	add.l	d4,d1		; y
 
@@ -153,7 +161,9 @@ wave_compute:
 	add.w	d1,d1
 	move.w	d5,(a0,d1.w)
 	adda.w	#32,a0
-	dbra.w	d7,.cube_frame
+	dbra.w	d7,.cube_frame_alpha
+	swap.w	d7
+	dbra.w	d7,.cube_frame_beta
 
 ;;; Set palette
 	lea.l	$ffff8242.w,a0
