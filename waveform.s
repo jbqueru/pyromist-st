@@ -107,48 +107,48 @@ wave_compute:
 	swap.w	d7
 	move.w	#127,d7
 .cube_frame_alpha:
-; x = x0 * cos(a) - y0 * sin(a)
-	move.w	#2172,d0	; x0
-	move.w	#2172,d1	; y0
-	move.w	#2172,d2	; z0
+	move.w	#1086,d0	; x0 - 256 * 3  * sqrt(2)
+	move.w	#1086,d1	; y0
+	move.w	#1086,d2	; z0
 
-	move.w	d0,d3
-	move.w	d7,d6
+; x = x0 * cos(alpha) - y0 * sin(alpha)
+	move.w	d0,d3		; x0
+	move.w	d7,d6		; alpha
 	add.w	#32,d6
 	andi.w	#127,d6
 	add.w	d6,d6
-	muls	(a1,d6.w),d3	; * cos(a)
+	muls	(a1,d6.w),d3	; x0 * cos(alpha) * 32k
 
-	move.w	d1,d5	; y0
-	move.w	d7,d6
+	move.w	d1,d5		; y0
+	move.w	d7,d6		; alpha
 	add.w	d6,d6
-	muls	(a1,d6.w),d5	; * sin(a)
+	muls	(a1,d6.w),d5	; y0 * sin(alpha) * 32k
 
-	sub.l	d5,d3		; x
-	move.l	d3,d0
+	sub.l	d5,d3		; new x * 32k
+	add.l	d3,d3		; new x * 64k
+	swap.w	d3		; new x
 
-; y = y0 * cos(a) + x0 * sin(a)
-
-	move.w	#2172,d1	; y0, 2*256*3*sqrt(2)
-
-	move.w	d7,d6
+; y = y0 * cos(alpha) + x0 * sin(alpha)
+	move.w	d1,d4		; y0
+	move.w	d7,d6		; alpha
 	add.w	#32,d6
 	andi.w	#127,d6
 	add.w	d6,d6
-	muls	(a1,d6.w),d1	; * cos(a)
+	muls	(a1,d6.w),d4	; y0 * cos(alpha) * 32k
 
-	move.w	#2172,d4	; x0
-
-	move.w	d7,d6
+	move.w	d0,d5		; x0
+	move.w	d7,d6		; alpha
 	add.w	d6,d6
-	muls	(a1,d6.w),d4	; * sin(a)
+	muls	(a1,d6.w),d5	; x0 * sin(alpha) * 32k
 
-	add.l	d4,d1		; y
+	add.l	d5,d4		; new y * 32k
+	add.l	d4,d4		; new y * 64k
+	swap.w	d4		; new y
+
+	move.w	d3,d0
+	move.w	d4,d1
 
 
-
-
-	swap.w	d0
 	add.w	#2048,d0	; 7.5*256 (center) + 0.5*256 (nearest)
 	asr.w	#8,d0
 	moveq.l	#1,d5
