@@ -111,6 +111,46 @@ wave_compute:
 	move.w	#1086,d1	; y0
 	move.w	#1086,d2	; z0
 
+	bsr.s	wave_cube_rotate
+
+
+	add.w	#2048,d0	; 7.5*256 (center) + 0.5*256 (nearest)
+	asr.w	#8,d0
+	moveq.l	#1,d5
+	lsl.w	d0,d5
+
+	swap.w	d1
+	add.w	#2048,d1	; 7.5*256 (center) + 0.5*256 (nearest)
+	asr.w	#8,d1
+
+	add.w	d1,d1
+	move.w	d5,(a0,d1.w)
+	adda.w	#32,a0
+	dbra.w	d7,.cube_frame_alpha
+	swap.w	d7
+	dbra.w	d7,.cube_frame_beta
+
+;;; Set palette
+	lea.l	$ffff8242.w,a0
+	move.w	#$711,(a0)+
+	move.l	#$7400660,(a0)+
+	move.l	#$0700166,(a0)+
+	move.l	#$2270717,(a0)+
+	move.l	#$7770777,d0
+	move.l	d0,(a0)+
+	move.l	d0,(a0)+
+	move.l	d0,(a0)+
+	move.l	d0,(a0)+
+
+; Done, let the drawing begin
+	move.b	#1,compute_phase
+	clr.l	compute_routine
+	rts
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Subroutine to compute the rotations
+;;;;;;;;
+wave_cube_rotate:
 ; rotate by alpha around z - d5 is trig scratch
 
 ; x = x0 * cos(alpha) - y0 * sin(alpha)
@@ -275,40 +315,8 @@ wave_compute:
 	move.w	d3,d0		; update x0
 	move.w	d4,d1		; update y0
 
-
-
-	add.w	#2048,d0	; 7.5*256 (center) + 0.5*256 (nearest)
-	asr.w	#8,d0
-	moveq.l	#1,d5
-	lsl.w	d0,d5
-
-	swap.w	d1
-	add.w	#2048,d1	; 7.5*256 (center) + 0.5*256 (nearest)
-	asr.w	#8,d1
-
-	add.w	d1,d1
-	move.w	d5,(a0,d1.w)
-	adda.w	#32,a0
-	dbra.w	d7,.cube_frame_alpha
-	swap.w	d7
-	dbra.w	d7,.cube_frame_beta
-
-;;; Set palette
-	lea.l	$ffff8242.w,a0
-	move.w	#$711,(a0)+
-	move.l	#$7400660,(a0)+
-	move.l	#$0700166,(a0)+
-	move.l	#$2270717,(a0)+
-	move.l	#$7770777,d0
-	move.l	d0,(a0)+
-	move.l	d0,(a0)+
-	move.l	d0,(a0)+
-	move.l	d0,(a0)+
-
-; Done, let the drawing begin
-	move.b	#1,compute_phase
-	clr.l	compute_routine
 	rts
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Update the coordinates for the waveform spheres
