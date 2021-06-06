@@ -103,7 +103,21 @@ wave_compute:
 
 .cube_frame:
 ; x = x0 * cos(a) - y0 * sin(a)
+	move.w	#2172,d0	; x0
 
+	move.w	d7,d5
+	add.w	#32,d5
+	andi.w	#127,d5
+	add.w	d5,d5
+	muls	(a1,d5.w),d0	; * cos(a)
+
+	move.w	#2172,d4	; y0
+
+	move.w	d7,d5
+	add.w	d5,d5
+	muls	(a1,d5.w),d4	; * sin(a)
+
+	sub.l	d4,d0		; y
 
 ; y = y0 * cos(a) + x0 * sin(a)
 
@@ -126,12 +140,18 @@ wave_compute:
 
 
 
+	swap.w	d0
+	add.w	#2048,d0	; 7.5*256 (center) + 0.5*256 (nearest)
+	asr.w	#8,d0
+	moveq.l	#1,d5
+	lsl.w	d0,d5
 
 	swap.w	d1
-	add.w	#1920,d1	; 7.5*256
+	add.w	#2048,d1	; 7.5*256 (center) + 0.5*256 (nearest)
 	asr.w	#8,d1
+
 	add.w	d1,d1
-	move.w	#-1,(a0,d1.w)
+	move.w	d5,(a0,d1.w)
 	adda.w	#32,a0
 	dbra.w	d7,.cube_frame
 
