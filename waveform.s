@@ -78,9 +78,9 @@ wave_compute:
 
 ;;; Set palette
 	lea.l	$ffff8242.w,a0
-	move.w	#$711,(a0)+
-	move.l	#$7400660,(a0)+
-	move.l	#$0700166,(a0)+
+	move.w	#$611,(a0)+
+	move.l	#$6400550,(a0)+
+	move.l	#$0500155,(a0)+
 	move.l	#$2270717,(a0)+
 	move.l	#$7770777,d0
 	move.l	d0,(a0)+
@@ -130,6 +130,11 @@ wave_update:
 ; a5: graphics start
 ; a6: free
 wave_draw:
+	.rept	16
+;	move.w	#$700,$ffff8240.w
+	move.w	#$000,$ffff8240.w
+	.endr
+
 	move.l	back_to_draw_data,a6
 	move.w	(a6),d0
 	lea.l	heap,a5
@@ -290,6 +295,40 @@ wave_draw:
 	add.w	d0,d1		; update ball rotation on start of next row
 	dbra.w	d7,.copy_row
 
+
+	move.l	back_buffer,a0
+	adda.w	#678,a0
+	moveq.l	#11,d7
+.cube_row:
+	moveq.l	#11,d6
+.cube_column:
+	lea.l	wave_cube,a1
+	move.w	(a1)+,(a0)
+	move.w	(a1)+,160(a0)
+	move.w	(a1)+,320(a0)
+	move.w	(a1)+,480(a0)
+	move.w	(a1)+,640(a0)
+	move.w	(a1)+,800(a0)
+	move.w	(a1)+,960(a0)
+	move.w	(a1)+,1120(a0)
+	move.w	(a1)+,1280(a0)
+	move.w	(a1)+,1440(a0)
+	move.w	(a1)+,1600(a0)
+	move.w	(a1)+,1760(a0)
+	move.w	(a1)+,1920(a0)
+	move.w	(a1)+,2080(a0)
+	move.w	(a1)+,2240(a0)
+	move.w	(a1)+,2400(a0)
+	addq.l	#8,a0
+	dbra.w	d6,.cube_column
+	adda.w	#2464,a0
+	dbra.w	d7,.cube_row
+
+	.rept	16
+;	move.w	#$070,$ffff8240.w
+	move.w	#$000,$ffff8240.w
+	.endr
+
 	rts
 
 	.data
@@ -304,6 +343,15 @@ wave_sphere:
 	dc.b	0,24,36,45,53,60,68,75,83,92,104,0
 	dc.b	13,28,38,46,53,60,68,75,82,90,100,115
 	dc.b	16,29,39,46,54,61,67,74,82,89,99,112
+
+	.even
+wave_cube:
+	dcb.w	16,0
+	dc.w	$0
+	dc.w	$7ffe
+	dcb.w	12,$4002
+	dc.w	$7ffe
+	dc.w	$0
 
 	.bss
 	.even
