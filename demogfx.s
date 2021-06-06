@@ -116,7 +116,7 @@ heap:
 	ds.b	600000
 
 ; Heap layout:
-; Waveform: 18432 bytes at offset 0
+; Waveform: 9216 bytes at offset 0
 
 ;	.include "twistscr.s"
 	.include "waveform.s"
