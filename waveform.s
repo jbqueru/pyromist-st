@@ -141,7 +141,7 @@ wave_compute_core:
 ;	swap.w	d3		; 0 to 6
 ;	addq.w	#1,d3		; 1 to 7
 
-	addi.b	#203,d3
+	addi.b	#202,d3
 	mulu.w	#3084,d3	; 0 to 786420 ($BFFF4) (3084 = 65536*12/255)
 	swap.w	d3		; 0 to 11
 	addq.w	#1,d3		; 1 to 12
