@@ -1157,13 +1157,13 @@ wave_cube_xyz:
 	.bss
 	.even
 wave_f1:
-	ds.w	1
+	ds.w	2
 wave_f2:
-	ds.w	1
+	ds.w	2
 wave_f3:
-	ds.w	1
+	ds.w	2
 wave_f4:
-	ds.w	1
+	ds.w	2
 
 wave_cube_3d_xyz:
 	ds.w	24
