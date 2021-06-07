@@ -27,7 +27,7 @@
 ;
 ; heap offset 18432
 ; 512 bitmaps, 16*16 pixels, 1 bitplane
-; total 524288 bytes
+; total 16384 bytes
 ;;;;;;;;
 
 
@@ -92,6 +92,7 @@ wave_compute:
 	move.w	d1,(a0)+
 	move.w	d2,(a0)+
 	dbra.w	d6,.generate_row
+	move.w	d7,$ffff8240.w
 	dbra.w	d7,.generate_image
 
 ;;; Precompute cubes
@@ -143,9 +144,21 @@ wave_compute:
 	add.w	#2048,d1	; 7.5*256 (center) + 0.5*256 (nearest)
 	asr.w	#8,d1
 
+	tst.w	d2
+	bpl.s	.visible_pixel
+
+	move.w	d1,d2
+	lsl.w	#4,d2
+	add.w	d0,d2
+	lea.l	wave_sphere_mask,a3
+	tst.b	(a3,d2.w)
+	bne.s	.pixel_done
+
+.visible_pixel:
 	add.w	d1,d1
 	or.w	d5,-32(a2,d1.w)
 
+.pixel_done:
 	dbra.w	d6,.draw_pixel
 	move.w	d7,$ffff8240.w
 	dbra.w	d7,.cube_frame
@@ -389,7 +402,7 @@ wave_update:
 ; a6: free
 wave_draw:
 	.rept	16
-;	move.w	#$700,$ffff8240.w
+	move.w	#$700,$ffff8240.w
 	move.w	#$000,$ffff8240.w
 	.endr
 
@@ -607,7 +620,7 @@ wave_draw:
 	dbra.w	d7,.cube_row
 
 	.rept	16
-;	move.w	#$070,$ffff8240.w
+	move.w	#$070,$ffff8240.w
 	move.w	#$000,$ffff8240.w
 	.endr
 
@@ -631,6 +644,25 @@ wave_sphere:
 	dc.b	0,108,97,92,90,89,89,90,92,97,108,0
 	dc.b	0,0,112,104,100,99,99,100,104,112,0,0
 	dc.b	0,0,0,0,115,112,112,115,0,0,0,0
+
+; TODO: put on the heap
+wave_sphere_mask:
+	dcb.b	16,0
+	dcb.b	16,0
+	dc.b	0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0
+	dc.b	0,0,0,0,1,1,1,1,1,1,1,1,0,0,0,0
+	dc.b	0,0,0,1,1,1,1,1,1,1,1,1,1,0,0,0
+	dc.b	0,0,0,1,1,1,1,1,1,1,1,1,1,0,0,0
+	dc.b	0,0,1,1,1,1,1,1,1,1,1,1,1,1,0,0
+	dc.b	0,0,1,1,1,1,1,1,1,1,1,1,1,1,0,0
+	dc.b	0,0,1,1,1,1,1,1,1,1,1,1,1,1,0,0
+	dc.b	0,0,1,1,1,1,1,1,1,1,1,1,1,1,0,0
+	dc.b	0,0,0,1,1,1,1,1,1,1,1,1,1,0,0,0
+	dc.b	0,0,0,1,1,1,1,1,1,1,1,1,1,0,0,0
+	dc.b	0,0,0,0,1,1,1,1,1,1,1,1,0,0,0,0
+	dc.b	0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0
+	dcb.b	16,0
+	dcb.b	16,0
 
 	.even
 ; Sine curve, 128 steps, scaled by 32767
