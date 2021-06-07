@@ -129,6 +129,112 @@ wave_compute:
 	.endr
 
 	suba.w	#48,a1
+
+	move.w	(a1),d0
+	addi.w	#2048,d0	; 7.5*256 (center) + 0.5*256 (nearest)
+	asr.w	#8,d0
+	move.w	2(a1),d1
+	addi.w	#2048,d1	; 7.5*256 (center) + 0.5*256 (nearest)
+	asr.w	#8,d1
+	move.w	6(a1),d2
+	addi.w	#2048,d2	; 7.5*256 (center) + 0.5*256 (nearest)
+	asr.w	#8,d2
+	move.w	8(a1),d3
+	addi.w	#2048,d3	; 7.5*256 (center) + 0.5*256 (nearest)
+	asr.w	#8,d3
+	lea.l	-32(a2),a3
+	bsr	wave_draw_line
+
+	move.w	6(a1),d0
+	addi.w	#2048,d0	; 7.5*256 (center) + 0.5*256 (nearest)
+	asr.w	#8,d0
+	move.w	8(a1),d1
+	addi.w	#2048,d1	; 7.5*256 (center) + 0.5*256 (nearest)
+	asr.w	#8,d1
+	move.w	12(a1),d2
+	addi.w	#2048,d2	; 7.5*256 (center) + 0.5*256 (nearest)
+	asr.w	#8,d2
+	move.w	14(a1),d3
+	addi.w	#2048,d3	; 7.5*256 (center) + 0.5*256 (nearest)
+	asr.w	#8,d3
+	lea.l	-32(a2),a3
+	bsr	wave_draw_line
+
+	move.w	12(a1),d0
+	addi.w	#2048,d0	; 7.5*256 (center) + 0.5*256 (nearest)
+	asr.w	#8,d0
+	move.w	14(a1),d1
+	addi.w	#2048,d1	; 7.5*256 (center) + 0.5*256 (nearest)
+	asr.w	#8,d1
+	move.w	18(a1),d2
+	addi.w	#2048,d2	; 7.5*256 (center) + 0.5*256 (nearest)
+	asr.w	#8,d2
+	move.w	20(a1),d3
+	addi.w	#2048,d3	; 7.5*256 (center) + 0.5*256 (nearest)
+	asr.w	#8,d3
+	lea.l	-32(a2),a3
+	bsr	wave_draw_line
+
+	move.w	18(a1),d0
+	addi.w	#2048,d0	; 7.5*256 (center) + 0.5*256 (nearest)
+	asr.w	#8,d0
+	move.w	20(a1),d1
+	addi.w	#2048,d1	; 7.5*256 (center) + 0.5*256 (nearest)
+	asr.w	#8,d1
+	move.w	24(a1),d2
+	addi.w	#2048,d2	; 7.5*256 (center) + 0.5*256 (nearest)
+	asr.w	#8,d2
+	move.w	26(a1),d3
+	addi.w	#2048,d3	; 7.5*256 (center) + 0.5*256 (nearest)
+	asr.w	#8,d3
+	lea.l	-32(a2),a3
+	bsr	wave_draw_line
+
+	move.w	24(a1),d0
+	addi.w	#2048,d0	; 7.5*256 (center) + 0.5*256 (nearest)
+	asr.w	#8,d0
+	move.w	26(a1),d1
+	addi.w	#2048,d1	; 7.5*256 (center) + 0.5*256 (nearest)
+	asr.w	#8,d1
+	move.w	30(a1),d2
+	addi.w	#2048,d2	; 7.5*256 (center) + 0.5*256 (nearest)
+	asr.w	#8,d2
+	move.w	32(a1),d3
+	addi.w	#2048,d3	; 7.5*256 (center) + 0.5*256 (nearest)
+	asr.w	#8,d3
+	lea.l	-32(a2),a3
+	bsr	wave_draw_line
+
+	move.w	30(a1),d0
+	addi.w	#2048,d0	; 7.5*256 (center) + 0.5*256 (nearest)
+	asr.w	#8,d0
+	move.w	32(a1),d1
+	addi.w	#2048,d1	; 7.5*256 (center) + 0.5*256 (nearest)
+	asr.w	#8,d1
+	move.w	36(a1),d2
+	addi.w	#2048,d2	; 7.5*256 (center) + 0.5*256 (nearest)
+	asr.w	#8,d2
+	move.w	38(a1),d3
+	addi.w	#2048,d3	; 7.5*256 (center) + 0.5*256 (nearest)
+	asr.w	#8,d3
+	lea.l	-32(a2),a3
+	bsr	wave_draw_line
+
+	move.w	36(a1),d0
+	addi.w	#2048,d0	; 7.5*256 (center) + 0.5*256 (nearest)
+	asr.w	#8,d0
+	move.w	38(a1),d1
+	addi.w	#2048,d1	; 7.5*256 (center) + 0.5*256 (nearest)
+	asr.w	#8,d1
+	move.w	42(a1),d2
+	addi.w	#2048,d2	; 7.5*256 (center) + 0.5*256 (nearest)
+	asr.w	#8,d2
+	move.w	44(a1),d3
+	addi.w	#2048,d3	; 7.5*256 (center) + 0.5*256 (nearest)
+	asr.w	#8,d3
+	lea.l	-32(a2),a3
+	bsr	wave_draw_line
+
 	moveq.l	#7,d6
 
 .draw_pixel:
@@ -136,12 +242,13 @@ wave_compute:
 	move.w	(a1)+,d1
 	move.w	(a1)+,d2
 
-	add.w	#2048,d0	; 7.5*256 (center) + 0.5*256 (nearest)
+	addi.w	#2048,d0	; 7.5*256 (center) + 0.5*256 (nearest)
 	asr.w	#8,d0
 	moveq.l	#1,d5
-	lsl.w	d0,d5
+	ror.w	d5
+	lsr.w	d0,d5
 
-	add.w	#2048,d1	; 7.5*256 (center) + 0.5*256 (nearest)
+	addi.w	#2048,d1	; 7.5*256 (center) + 0.5*256 (nearest)
 	asr.w	#8,d1
 
 	tst.w	d2
@@ -363,6 +470,100 @@ wave_cube_rotate:
 
 	rts
 
+;;; Subroutine to draw lines
+
+wave_draw_line:
+; d0,d1: x0,y0
+; d2,d3: x1,y1
+; a3: destination bitmap
+
+; ensure d0 >= d2
+	cmp.w	d0,d2
+	ble.s	.lines_ordered ; d2 >= d0
+	exg	d0,d2
+	exg	d1,d3
+.lines_ordered:
+
+; Compute end of line relative to start
+	moveq.l	#2,d4	; addr_offset
+	sub.w	d0,d2	; dx
+	neg.w	d2
+
+	sub.w	d1,d3	; dy
+; Adjust delta-y to be positive, adjust line offset accordingly
+	bge.s	.adjusted_dy ; d3 >= d1
+	neg.w	d3
+	neg.w	d4
+.adjusted_dy:
+
+; Compute start address and start pixel pattern
+	add.w	d1,d1
+	adda.w	d1,a3
+
+	move.w	d0,d1
+	move.w	#$8000,d5 ; pixel pattern
+	andi.w	#15,d1
+	lsr.w	d1,d5
+
+; Check which type of line we're drawing
+	cmp.w	d2,d3
+	blt.s	.wave_draw_h_line ; d3 < d2
+	beq.s	.wave_draw_d_line ; d3 = d2 - includes single-pixel lines
+
+; Draw a vertical-ish line
+.wave_draw_v_line:
+	swap.w	d2
+	clr.w	d2
+	divu	d3,d2
+	move.w	#$7fff,d6
+
+.draw_v_pixel:
+	or.w	d5,(a3)
+	add.w	d2,d6
+	bcc.s	.done_v_adjust
+	add.w	d5,d5
+;	bne.s	.done_v_adjust
+;	subq.l	#8,a0
+;	moveq.l	#1,d5
+.done_v_adjust:
+	add.w	d4,a3
+	dbra	d3,.draw_v_pixel
+	rts
+
+.wave_draw_h_line:
+;	rts
+; Draw a horizontal-ish line
+.setup_h_slope:
+	swap.w	d3
+	clr.w	d3
+	divu	d2,d3
+	move.w	#$7fff,d6
+
+.draw_h_pixel:
+	or.w	d5,(a3)
+	add.w	d3,d6
+	bcc.s	.done_h_adjust1
+	add.w	d4,a3
+.done_h_adjust1:
+	add.w	d5,d5
+;	bne.s	.done_h_adjust2
+;	subq.l	#8,a0
+;	moveq.l	#1,d5
+;.done_h_adjust2:
+	dbra	d2,.draw_h_pixel
+	rts
+
+.wave_draw_d_line:
+.draw_d_pixel:
+	or.w	d5,(a3)
+	add.w	d5,d5
+;	bne.s	.done_d_adjust
+;	subq.l	#8,a0
+;	moveq.l	#1,d5
+;.done_d_adjust:
+	add.w	d4,a3
+	dbra	d3,.draw_d_pixel
+	rts
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Update the coordinates for the waveform spheres
