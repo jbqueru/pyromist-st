@@ -92,7 +92,7 @@ wave_compute:
 	move.w	d1,(a0)+
 	move.w	d2,(a0)+
 	dbra.w	d6,.generate_row
-	move.w	d7,$ffff8240.w
+;	move.w	d7,$ffff8240.w
 	dbra.w	d7,.generate_image
 
 ;;; Precompute cubes
@@ -352,7 +352,7 @@ wave_compute:
 
 .pixel_done:
 	dbra.w	d6,.draw_pixel
-	move.w	d7,$ffff8240.w
+;	move.w	d7,$ffff8240.w
 	dbra.w	d7,.cube_frame
 
 ;;; Set palette
@@ -696,7 +696,7 @@ wave_update:
 ; a6: free
 wave_draw:
 	.rept	16
-	move.w	#$700,$ffff8240.w
+;	move.w	#$700,$ffff8240.w
 	move.w	#$000,$ffff8240.w
 	.endr
 
@@ -914,7 +914,7 @@ wave_draw:
 	dbra.w	d7,.cube_row
 
 	.rept	16
-	move.w	#$070,$ffff8240.w
+;	move.w	#$070,$ffff8240.w
 	move.w	#$000,$ffff8240.w
 	.endr
 
