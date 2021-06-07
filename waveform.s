@@ -361,11 +361,15 @@ wave_compute:
 	move.l	#$7400660,(a0)+
 	move.l	#$0700166,(a0)+
 	move.l	#$2270717,(a0)+
-	move.l	#$7770777,d0
-	move.l	d0,(a0)+
-	move.l	d0,(a0)+
-	move.l	d0,(a0)+
-	move.l	d0,(a0)+
+;	move.l	#$7770777,d0
+;	move.l	d0,(a0)+
+;	move.l	d0,(a0)+
+;	move.l	d0,(a0)+
+;	move.l	d0,(a0)+
+	move.l	#$5550755,(a0)+
+	move.l	#$7650775,(a0)+
+	move.l	#$5750577,(a0)+
+	move.l	#$5570757,(a0)+
 
 ; Done, let the drawing begin
 	move.b	#1,compute_phase
