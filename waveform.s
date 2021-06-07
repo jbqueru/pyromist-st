@@ -12,7 +12,15 @@
 ;   See the License for the specific language governing permissions and
 ;   limitations under the License.
 
-	.text
+; ***********************************************************************
+; ***********************************************************************
+; ***                                                                 ***
+; ***                SPHERE + MINI-CUBE WAVEFORM SCREEN               ***
+; *** SPLIT CUBE IN 144 SMALLER CUBES, WITH A ROTATING SPHERE IN EACH ***
+; ***                                                                 ***
+; ***********************************************************************
+; ***********************************************************************
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Format of precomputed graphics for the waveform spheres
@@ -31,9 +39,10 @@
 ;;;;;;;;
 
 
+	.text
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; Precompute the graphics for the waveform spheres
+; Setup
 ;;;;;;;;
 wave_compute:
 ; Wait until precompute reaches phase 1 to draw wave
@@ -50,6 +59,60 @@ wave_compute:
 	move.l	back_to_draw_data,most_recently_updated
 	move.l	back_to_draw_data,next_to_update
 
+; Start the pre-animation
+	move.l	#wave_intro_update,update_routine
+	move.l	#wave_intro_draw,draw_routine
+
+	bra.s	wave_compute_core
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Draw intro animation
+;;;;;;;;
+wave_intro_update:
+	clr.l	update_routine
+	move.w	#$102,$ffff8240.w
+	move.w	#$fff,$ffff8250.w
+	rts
+
+wave_intro_draw:
+	move.l	back_buffer,a0
+	adda.w	#2598,a0	; 16*160+32+6
+	lea.l	26720(a0),a1
+	moveq.l	#$000f,d0
+	move.w	d0,(a0)
+	addq.l	#8,a0
+	move.w	d0,(a1)
+	addq.l	#8,a1
+	moveq.l	#9,d7
+	moveq.l	#$ffffffff,d0
+.draw_horiz:
+	move.w	d0,(a0)
+	addq.l	#8,a0
+	move.w	d0,(a1)
+	addq.l	#8,a1
+	dbra.w	d7,.draw_horiz
+	move.w	#$f000,d0
+	move.w	d0,(a0)
+	move.w	d0,(a1)
+	lea.l	72(a0),a0
+	lea.l	88(a0),a1
+	moveq.l	#$0008,d0
+	move.w	#$1000,d1
+	move.w	#165,d7
+.draw_vert:
+	move.w	d0,(a0)
+	adda.w	#160,a0
+	move.w	d1,(a1)
+	adda.w	#160,a1
+	dbra.w	d7,.draw_vert
+	rts
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Precompute the graphics for the waveform spheres
+;;;;;;;;
+
+wave_compute_core:
 ;;; Precompute sphere graphics
 ; d0,d1,d2: bit planes
 ; d3: pixel color
