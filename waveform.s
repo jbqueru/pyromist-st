@@ -331,9 +331,8 @@ wave_compute:
 
 
 
-
+;;; TODO: remove this whole code. It just shows how to do z removal
 	moveq.l	#7,d6
-
 .draw_pixel:
 	move.w	(a1)+,d0
 	move.w	(a1)+,d1
@@ -360,10 +359,12 @@ wave_compute:
 
 .visible_pixel:
 	add.w	d1,d1
-	or.w	d5,-32(a2,d1.w)
+;	or.w	d5,-32(a2,d1.w)
 
 .pixel_done:
 	dbra.w	d6,.draw_pixel
+
+
 ;	move.w	d7,$ffff8240.w
 	dbra.w	d7,.cube_frame
 
