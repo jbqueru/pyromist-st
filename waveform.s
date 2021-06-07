@@ -26,9 +26,8 @@
 ; Format of precomputed graphics for the surrounding cubes
 ;
 ; heap offset 18432
-; 256*64 bitmaps, 16*16 pixels, 1 bitplane
+; 512 bitmaps, 16*16 pixels, 1 bitplane
 ; total 524288 bytes
-; TODO: would 128*32 work?
 ;;;;;;;;
 
 
@@ -96,39 +95,60 @@ wave_compute:
 	dbra.w	d7,.generate_image
 
 ;;; Precompute cubes
-; d0-d2: x0/y0/z0
-; d3-d5: compute x/y/z (2 accumulators + 1 trig scratch)
-; d6: scratch for trig lookups
-; d7: angles (alpha in low word, beta in high word) (!!!)
+; d7: angle
+; a6: sine table
+; a0: read xyz
+; a1: output 3d xyz
+; a2: output bitmaps
 	lea.l	wave_sine,a6
-	lea.l	heap+18432,a0
-	move.w	#127,d7
-.cube_frame_beta:
-	swap.w	d7
-	move.w	#127,d7
-.cube_frame_alpha:
-	move.w	#1086,d0	; x0 - 256 * 3  * sqrt(2)
-	move.w	#1086,d1	; y0
-	move.w	#1086,d2	; z0
+	lea.l	heap+18432,a2
+	moveq.l	#0,d7
+	move.w	#511,d7
+.cube_frame:
+	lea.l	wave_cube_xyz,a0
+	lea.l	wave_cube_3d_xyz,a1
+.next_vertex:
+; d0-d2: x0/y0/z0
+; d3-d6: modified by subroutine
+	move.w	(a0)+,d0
+	tst.w	d0
+	beq.s	.cube_rotate_done
+	move.w	(a0)+,d1
+	move.w	(a0)+,d2
+	bsr	wave_cube_rotate
+	move.w	d0,(a1)+
+	move.w	d1,(a1)+
+	move.w	d2,(a1)+
+	bra.s	.next_vertex
+.cube_rotate_done:
 
-	bsr.s	wave_cube_rotate
+	moveq.l	#0,d0
+	.rept	8
+	move.l	d0,(a2)+
+	.endr
 
+	suba.w	#48,a1
+	moveq.l	#7,d6
+
+.draw_pixel:
+	move.w	(a1)+,d0
+	move.w	(a1)+,d1
+	move.w	(a1)+,d2
 
 	add.w	#2048,d0	; 7.5*256 (center) + 0.5*256 (nearest)
 	asr.w	#8,d0
 	moveq.l	#1,d5
 	lsl.w	d0,d5
 
-	swap.w	d1
 	add.w	#2048,d1	; 7.5*256 (center) + 0.5*256 (nearest)
 	asr.w	#8,d1
 
 	add.w	d1,d1
-	move.w	d5,(a0,d1.w)
-	adda.w	#32,a0
-	dbra.w	d7,.cube_frame_alpha
-	swap.w	d7
-	dbra.w	d7,.cube_frame_beta
+	or.w	d5,-32(a2,d1.w)
+
+	dbra.w	d6,.draw_pixel
+	move.w	d7,$ffff8240.w
+	dbra.w	d7,.cube_frame
 
 ;;; Set palette
 	lea.l	$ffff8242.w,a0
@@ -149,6 +169,11 @@ wave_compute:
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Subroutine to compute the rotations
+; d0-d2: x/y/z input/output
+; d3-d6: modified
+; d7: angles (alpha in low word, beta in high word) (!!!) (unmodified)
+; a0-a5: unused
+; a6: trig table (unmodified)
 ;;;;;;;;
 wave_cube_rotate:
 ; rotate by alpha around z - d5 is trig scratch
@@ -156,13 +181,14 @@ wave_cube_rotate:
 ; x = x0 * cos(alpha) - y0 * sin(alpha)
 	move.w	d0,d3		; x0
 	move.l	d7,d6		; alpha
-	add.w	#32,d6
+	addi.w	#32,d6
 	andi.w	#127,d6
 	add.w	d6,d6
 	muls	(a6,d6.w),d3	; x0 * cos(alpha) * 32k
 
 	move.w	d1,d5		; y0
 	move.l	d7,d6		; alpha
+	andi.w	#127,d6
 	add.w	d6,d6
 	muls	(a6,d6.w),d5	; y0 * sin(alpha) * 32k
 
@@ -173,13 +199,14 @@ wave_cube_rotate:
 ; y = y0 * cos(alpha) + x0 * sin(alpha)
 	move.w	d1,d4		; y0
 	move.l	d7,d6		; alpha
-	add.w	#32,d6
+	addi.w	#32,d6
 	andi.w	#127,d6
 	add.w	d6,d6
 	muls	(a6,d6.w),d4	; y0 * cos(alpha) * 32k
 
 	move.w	d0,d5		; x0
 	move.l	d7,d6		; alpha
+	andi.w	#127,d6
 	add.w	d6,d6
 	muls	(a6,d6.w),d5	; x0 * sin(alpha) * 32k
 
@@ -196,7 +223,7 @@ wave_cube_rotate:
 	move.w	d1,d4		; y0
 	move.l	d7,d6
 	swap.w	d6		; beta
-	add.w	#32,d6
+	addi.w	#32,d6
 	andi.w	#127,d6
 	add.w	d6,d6
 	muls	(a6,d6.w),d4	; y0 * cos(beta) * 32k
@@ -204,6 +231,7 @@ wave_cube_rotate:
 	move.w	d2,d3		; z0
 	move.l	d7,d6
 	swap.w	d6		; beta
+	andi.w	#127,d6
 	add.w	d6,d6
 	muls	(a6,d6.w),d3	; z0 * sin(beta) * 32k
 
@@ -215,7 +243,7 @@ wave_cube_rotate:
 	move.w	d2,d5		; z0
 	move.l	d7,d6
 	swap.w	d6		; beta
-	add.w	#32,d6
+	addi.w	#32,d6
 	andi.w	#127,d6
 	add.w	d6,d6
 	muls	(a6,d6.w),d5	; z0 * cos(beta) * 32k
@@ -223,6 +251,7 @@ wave_cube_rotate:
 	move.w	d1,d3		; y0
 	move.l	d7,d6
 	swap.w	d6		; beta
+	andi.w	#127,d6
 	add.w	d6,d6
 	muls	(a6,d6.w),d3	; y0 * sin(beta) * 32k
 
@@ -238,13 +267,14 @@ wave_cube_rotate:
 ; z = z0 * cos(alpha) - x0 * sin(alpha)
 	move.w	d2,d5		; z0
 	move.l	d7,d6		; alpha
-	add.w	#32,d6
+	addi.w	#32,d6
 	andi.w	#127,d6
 	add.w	d6,d6
 	muls	(a6,d6.w),d5	; z0 * cos(alpha) * 32k
 
 	move.w	d0,d4		; x0
 	move.l	d7,d6		; alpha
+	andi.w	#127,d6
 	add.w	d6,d6
 	muls	(a6,d6.w),d4	; x0 * sin(alpha) * 32k
 
@@ -255,13 +285,14 @@ wave_cube_rotate:
 ; x = x0 * cos(alpha) + z0 * sin(alpha)
 	move.w	d0,d3		; x0
 	move.l	d7,d6		; alpha
-	add.w	#32,d6
+	addi.w	#32,d6
 	andi.w	#127,d6
 	add.w	d6,d6
 	muls	(a6,d6.w),d3	; x0 * cos(alpha) * 32k
 
 	move.w	d2,d4		; z0
 	move.l	d7,d6		; alpha
+	andi.w	#127,d6
 	add.w	d6,d6
 	muls	(a6,d6.w),d4	; z0 * sin(alpha) * 32k
 
@@ -278,7 +309,7 @@ wave_cube_rotate:
 	move.w	d0,d3		; x0
 	move.l	d7,d6
 	swap.w	d6		; beta
-	add.w	#32,d6
+	addi.w	#32,d6
 	andi.w	#127,d6
 	add.w	d6,d6
 	muls	(a6,d6.w),d3	; x0 * cos(beta) * 32k
@@ -286,6 +317,7 @@ wave_cube_rotate:
 	move.w	d1,d5		; y0
 	move.l	d7,d6
 	swap.w	d6		; beta
+	andi.w	#127,d6
 	add.w	d6,d6
 	muls	(a6,d6.w),d5	; y0 * sin(beta) * 32k
 
@@ -297,7 +329,7 @@ wave_cube_rotate:
 	move.w	d1,d4		; y0
 	move.l	d7,d6
 	swap.w	d6		; beta
-	add.w	#32,d6
+	addi.w	#32,d6
 	andi.w	#127,d6
 	add.w	d6,d6
 	muls	(a6,d6.w),d4	; y0 * cos(beta) * 32k
@@ -305,6 +337,7 @@ wave_cube_rotate:
 	move.w	d0,d5		; x0
 	move.l	d7,d6
 	swap.w	d6		; beta
+	andi.w	#127,d6
 	add.w	d6,d6
 	muls	(a6,d6.w),d5	; x0 * sin(beta) * 32k
 
@@ -544,12 +577,11 @@ wave_draw:
 .cube_row:
 	moveq.l	#11,d6
 .cube_column:
-;	lea.l	wave_cube,a1
 	lea.l	heap+18432,a1
 
 	move.l	back_to_draw_data,a6
 	move.w	(a6),d0
-	andi.w	#127,d0
+	andi.w	#511,d0
 	lsl.w	#5,d0
 	adda.w	d0,a1
 
@@ -623,14 +655,16 @@ wave_sine:
 	dc.w	-23170,-22005,-20787,-19519,-18204,-16846,-15446,-14010
 	dc.w	-12539,-11039,-9512,-7962,-6393,-4808,-3212,-1608
 
-
-wave_cube:
-	dcb.w	16,0
-	dc.w	$0
-	dc.w	$7ffe
-	dcb.w	12,$4002
-	dc.w	$7ffe
-	dc.w	$0
+wave_cube_xyz:
+	dc.w	1086,1086,1086
+	dc.w	1086,1086,-1086
+	dc.w	1086,-1086,-1086
+	dc.w	1086,-1086,1086
+	dc.w	-1086,-1086,1086
+	dc.w	-1086,-1086,-1086
+	dc.w	-1086,1086,-1086
+	dc.w	-1086,1086,1086
+	dc.w	0
 
 	.bss
 	.even
@@ -642,3 +676,6 @@ wave_f3:
 	ds.w	1
 wave_f4:
 	ds.w	1
+
+wave_cube_3d_xyz:
+	ds.w	24
