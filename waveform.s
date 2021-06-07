@@ -186,14 +186,15 @@ wave_compute:
 	move.w	20(a1),d1
 	addi.w	#2048,d1	; 7.5*256 (center) + 0.5*256 (nearest)
 	asr.w	#8,d1
-	move.w	24(a1),d2
+	move.w	(a1),d2
 	addi.w	#2048,d2	; 7.5*256 (center) + 0.5*256 (nearest)
 	asr.w	#8,d2
-	move.w	26(a1),d3
+	move.w	2(a1),d3
 	addi.w	#2048,d3	; 7.5*256 (center) + 0.5*256 (nearest)
 	asr.w	#8,d3
 	lea.l	-32(a2),a3
 	bsr	wave_draw_line
+
 
 	move.w	24(a1),d0
 	addi.w	#2048,d0	; 7.5*256 (center) + 0.5*256 (nearest)
@@ -239,6 +240,85 @@ wave_compute:
 	asr.w	#8,d3
 	lea.l	-32(a2),a3
 	bsr	wave_draw_line
+
+	move.w	42(a1),d0
+	addi.w	#2048,d0	; 7.5*256 (center) + 0.5*256 (nearest)
+	asr.w	#8,d0
+	move.w	44(a1),d1
+	addi.w	#2048,d1	; 7.5*256 (center) + 0.5*256 (nearest)
+	asr.w	#8,d1
+	move.w	24(a1),d2
+	addi.w	#2048,d2	; 7.5*256 (center) + 0.5*256 (nearest)
+	asr.w	#8,d2
+	move.w	26(a1),d3
+	addi.w	#2048,d3	; 7.5*256 (center) + 0.5*256 (nearest)
+	asr.w	#8,d3
+	lea.l	-32(a2),a3
+	bsr	wave_draw_line
+
+
+	move.w	(a1),d0
+	addi.w	#2048,d0	; 7.5*256 (center) + 0.5*256 (nearest)
+	asr.w	#8,d0
+	move.w	2(a1),d1
+	addi.w	#2048,d1	; 7.5*256 (center) + 0.5*256 (nearest)
+	asr.w	#8,d1
+	move.w	42(a1),d2
+	addi.w	#2048,d2	; 7.5*256 (center) + 0.5*256 (nearest)
+	asr.w	#8,d2
+	move.w	44(a1),d3
+	addi.w	#2048,d3	; 7.5*256 (center) + 0.5*256 (nearest)
+	asr.w	#8,d3
+	lea.l	-32(a2),a3
+	bsr	wave_draw_line
+
+	move.w	6(a1),d0
+	addi.w	#2048,d0	; 7.5*256 (center) + 0.5*256 (nearest)
+	asr.w	#8,d0
+	move.w	8(a1),d1
+	addi.w	#2048,d1	; 7.5*256 (center) + 0.5*256 (nearest)
+	asr.w	#8,d1
+	move.w	36(a1),d2
+	addi.w	#2048,d2	; 7.5*256 (center) + 0.5*256 (nearest)
+	asr.w	#8,d2
+	move.w	38(a1),d3
+	addi.w	#2048,d3	; 7.5*256 (center) + 0.5*256 (nearest)
+	asr.w	#8,d3
+	lea.l	-32(a2),a3
+	bsr	wave_draw_line
+
+	move.w	12(a1),d0
+	addi.w	#2048,d0	; 7.5*256 (center) + 0.5*256 (nearest)
+	asr.w	#8,d0
+	move.w	14(a1),d1
+	addi.w	#2048,d1	; 7.5*256 (center) + 0.5*256 (nearest)
+	asr.w	#8,d1
+	move.w	30(a1),d2
+	addi.w	#2048,d2	; 7.5*256 (center) + 0.5*256 (nearest)
+	asr.w	#8,d2
+	move.w	32(a1),d3
+	addi.w	#2048,d3	; 7.5*256 (center) + 0.5*256 (nearest)
+	asr.w	#8,d3
+	lea.l	-32(a2),a3
+	bsr	wave_draw_line
+
+	move.w	18(a1),d0
+	addi.w	#2048,d0	; 7.5*256 (center) + 0.5*256 (nearest)
+	asr.w	#8,d0
+	move.w	20(a1),d1
+	addi.w	#2048,d1	; 7.5*256 (center) + 0.5*256 (nearest)
+	asr.w	#8,d1
+	move.w	24(a1),d2
+	addi.w	#2048,d2	; 7.5*256 (center) + 0.5*256 (nearest)
+	asr.w	#8,d2
+	move.w	26(a1),d3
+	addi.w	#2048,d3	; 7.5*256 (center) + 0.5*256 (nearest)
+	asr.w	#8,d3
+	lea.l	-32(a2),a3
+	bsr	wave_draw_line
+
+
+
 
 	moveq.l	#7,d6
 
