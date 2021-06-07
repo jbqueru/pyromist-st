@@ -72,9 +72,21 @@ wave_compute:
 	tst.b	d3		; 0 in input = black/trasparent
 	beq.s	.computed_pixel
 	sub.b	d7,d3		; sub byte, wraparound, still 0-255
-	mulu.w	#1799,d3	; 0-456960 ($6FFF9) (1799 = 65536*7/255)
-	swap.w	d3		; 0-6
-	addq.w	#1,d3		; 1-7
+
+
+;	mulu.w	#1799,d3	; 0 to 456960 ($6FFF9) (1799 = 65536*7/255)
+;	swap.w	d3		; 0 to 6
+;	addq.w	#1,d3		; 1 to 7
+
+	addi.b	#203,d3
+	mulu.w	#3084,d3	; 0 to 786420 ($BFFF4) (3084 = 65536*12/255)
+	swap.w	d3		; 0 to 11
+	addq.w	#1,d3		; 1 to 12
+	cmp.w	#7,d3
+	ble.s	.computed_pixel
+	neg.w	d3		; -8 to -12
+	addi.w	#14,d3		; 6 to 2
+
 .computed_pixel:
 
 	lsr.w	d3		; extract bit 0
@@ -356,20 +368,81 @@ wave_compute:
 	dbra.w	d7,.cube_frame
 
 ;;; Set palette
-	lea.l	$ffff8242.w,a0
-	move.w	#$711,(a0)+
-	move.l	#$7400660,(a0)+
-	move.l	#$0700166,(a0)+
-	move.l	#$2270717,(a0)+
-;	move.l	#$7770777,d0
-;	move.l	d0,(a0)+
-;	move.l	d0,(a0)+
-;	move.l	d0,(a0)+
-;	move.l	d0,(a0)+
-	move.l	#$5550755,(a0)+
-	move.l	#$7650775,(a0)+
-	move.l	#$5750577,(a0)+
-	move.l	#$5570757,(a0)+
+; green-cyan
+;	lea.l	$ffff8242.w,a0
+
+;	move.w	#$070,(a0)+
+;	move.l	#$0720073,(a0)+
+;	move.l	#$0740075,(a0)+
+;	move.l	#$0760077,(a0)+
+
+;	move.l	#$5550573,(a0)+
+;	move.l	#$5740575,(a0)+
+;	move.l	#$5760577,(a0)+
+;	move.l	#$5770577,(a0)+
+
+; blue-cyan
+;	lea.l	$ffff8242.w,a0
+
+;	move.w	#$007,(a0)+
+;	move.l	#$0270037,(a0)+
+;	move.l	#$0470057,(a0)+
+;	move.l	#$0670077,(a0)+
+
+;	move.l	#$5550557,(a0)+
+;	move.l	#$5570567,(a0)+
+;	move.l	#$5670567,(a0)+
+;	move.l	#$5770577,(a0)+
+
+; greg #1
+	lea.l	$ffff8240.w,a0
+
+	move.l	#$1020016,(a0)+
+	move.l	#$0360046,(a0)+
+	move.l	#$2560266,(a0)+
+	move.l	#$4660476,(a0)+
+
+; greg #2
+	lea.l	$ffff8240.w,a0
+
+	move.l	#$1020374,(a0)+
+	move.l	#$0720062,(a0)+
+	move.l	#$0520142,(a0)+
+	move.l	#$2310221,(a0)+
+
+; greg #3
+	lea.l	$ffff8240.w,a0
+
+	move.l	#$1020321,(a0)+
+	move.l	#$4210411,(a0)+
+	move.l	#$4130513,(a0)+
+	move.l	#$6130714,(a0)+
+
+; greg #4
+	lea.l	$ffff8240.w,a0
+
+	move.l	#$1020736,(a0)+
+	move.l	#$7160617,(a0)+
+	move.l	#$5170417,(a0)+
+	move.l	#$3170017,(a0)+
+
+	move.l	#$3060306,d0
+	move.l	#$fff0fff,d0
+	move.l	d0,(a0)+
+	move.l	d0,(a0)+
+	move.l	d0,(a0)+
+	move.l	d0,(a0)+
+
+; rainbow
+;	lea.l	$ffff8242.w,a0
+;	move.w	#$711,(a0)+
+;	move.l	#$7400660,(a0)+
+;	move.l	#$0700166,(a0)+
+;	move.l	#$2270717,(a0)+
+;	move.l	#$5550755,(a0)+
+;	move.l	#$7650775,(a0)+
+;	move.l	#$5750577,(a0)+
+;	move.l	#$5570757,(a0)+
 
 ; Done, let the drawing begin
 	move.b	#1,compute_phase
@@ -701,7 +774,7 @@ wave_update:
 wave_draw:
 	.rept	16
 ;	move.w	#$700,$ffff8240.w
-	move.w	#$000,$ffff8240.w
+;	move.w	#$000,$ffff8240.w
 	.endr
 
 	move.l	back_to_draw_data,a6
@@ -924,7 +997,7 @@ wave_draw:
 
 	.rept	16
 ;	move.w	#$070,$ffff8240.w
-	move.w	#$000,$ffff8240.w
+;	move.w	#$000,$ffff8240.w
 	.endr
 
 	rts
