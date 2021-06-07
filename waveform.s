@@ -116,6 +116,11 @@ wave_compute:
 	beq.s	.cube_rotate_done
 	move.w	(a0)+,d1
 	move.w	(a0)+,d2
+	move.w	d7,d6		; XXX hack beta rotation
+	lsr.w	#2,d6		; XXX hack beta rotation
+	swap.w	d7		; XXX hack beta rotation
+	move.w	d6,d7		; XXX hack beta rotation
+	swap.w	d7		; XXX hack beta rotation
 	bsr	wave_cube_rotate
 	move.w	d0,(a1)+
 	move.w	d1,(a1)+
@@ -387,6 +392,8 @@ wave_cube_rotate:
 ; z = z0 * cos(alpha) - x0 * sin(alpha)
 	move.w	d2,d5		; z0
 	move.l	d7,d6		; alpha
+	lsr.w	d6		; XXX remove me, test
+	addi.w	#79,d6		; XXX remove me, test
 	addi.w	#32,d6
 	andi.w	#127,d6
 	add.w	d6,d6
@@ -394,6 +401,8 @@ wave_cube_rotate:
 
 	move.w	d0,d4		; x0
 	move.l	d7,d6		; alpha
+	lsr.w	d6		; XXX remove me, test
+	addi.w	#79,d6		; XXX remove me, test
 	andi.w	#127,d6
 	add.w	d6,d6
 	muls	(a6,d6.w),d4	; x0 * sin(alpha) * 32k
@@ -405,6 +414,8 @@ wave_cube_rotate:
 ; x = x0 * cos(alpha) + z0 * sin(alpha)
 	move.w	d0,d3		; x0
 	move.l	d7,d6		; alpha
+	lsr.w	d6		; XXX remove me, test
+	addi.w	#79,d6		; XXX remove me, test
 	addi.w	#32,d6
 	andi.w	#127,d6
 	add.w	d6,d6
@@ -412,6 +423,8 @@ wave_cube_rotate:
 
 	move.w	d2,d4		; z0
 	move.l	d7,d6		; alpha
+	lsr.w	d6		; XXX remove me, test
+	addi.w	#79,d6		; XXX remove me, test
 	andi.w	#127,d6
 	add.w	d6,d6
 	muls	(a6,d6.w),d4	; z0 * sin(alpha) * 32k
