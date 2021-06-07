@@ -888,6 +888,11 @@ wave_draw:
 
 	move.l	back_to_draw_data,a6
 	move.w	(a6),d0
+	add.w	d6,d0
+	add.w	d6,d0
+	add.w	d7,d0
+	add.w	d7,d0
+	add.w	d7,d0
 	andi.w	#511,d0
 	lsl.w	#5,d0
 	adda.w	d0,a1
