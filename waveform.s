@@ -75,14 +75,10 @@ wave_intro_update:
 	move.l	most_recently_updated,a5
 	move.l	next_to_update,a6
 	move.w	2(a5),d0
-	tst.w	d0
-	bne.s	.increment_line
-	move.w	#16,d0
-.increment_line:
 	addq.w	#1,d0
 	move.w	d0,2(a6)
 	cmp.w	#128,d0
-	bne.s	.continue
+	ble.s	.continue
 	clr.l	update_routine
 .continue:
 	rts
@@ -91,6 +87,41 @@ wave_intro_draw:
 	move.l	back_to_draw_data,a6
 	move.l	back_drawn_data,a5
 
+	tst.w	2(a5)
+	bne.s	.done_square
+
+	move.l	back_buffer,a0
+	adda.w	#2598,a0	; 16*160+32+6
+	lea.l	26720(a0),a1
+	moveq.l	#$000f,d0
+	move.w	d0,(a0)
+	addq.l	#8,a0
+	move.w	d0,(a1)
+	addq.l	#8,a1
+	moveq.l	#9,d7
+	moveq.l	#$ffffffff,d0
+.draw_square_horiz:
+	move.w	d0,(a0)
+	addq.l	#8,a0
+	move.w	d0,(a1)
+	addq.l	#8,a1
+	dbra.w	d7,.draw_square_horiz
+	move.w	#$f000,d0
+	move.w	d0,(a0)
+	move.w	d0,(a1)
+	lea.l	72(a0),a0
+	lea.l	88(a0),a1
+	moveq.l	#$0008,d0
+	move.w	#$1000,d1
+	move.w	#165,d7
+.draw_square_vert:
+	move.w	d0,(a0)
+	adda.w	#160,a0
+	move.w	d1,(a1)
+	adda.w	#160,a1
+	dbra.w	d7,.draw_square_vert
+
+.done_square:
 	move.w	2(a5),d0
 	move.l	back_buffer,a0
 	addq.l	#6,a0
@@ -105,41 +136,7 @@ wave_intro_draw:
 	move.w	#-1,(a0,d0.w)
 	move.w	#-1,32(a0,d0.w)
 
-	tst.w	2(a5)
-	beq.s	.draw_square
-	rts
 
-.draw_square:
-	move.l	back_buffer,a0
-	adda.w	#2598,a0	; 16*160+32+6
-	lea.l	26720(a0),a1
-	moveq.l	#$000f,d0
-	move.w	d0,(a0)
-	addq.l	#8,a0
-	move.w	d0,(a1)
-	addq.l	#8,a1
-	moveq.l	#9,d7
-	moveq.l	#$ffffffff,d0
-.draw_horiz:
-	move.w	d0,(a0)
-	addq.l	#8,a0
-	move.w	d0,(a1)
-	addq.l	#8,a1
-	dbra.w	d7,.draw_horiz
-	move.w	#$f000,d0
-	move.w	d0,(a0)
-	move.w	d0,(a1)
-	lea.l	72(a0),a0
-	lea.l	88(a0),a1
-	moveq.l	#$0008,d0
-	move.w	#$1000,d1
-	move.w	#165,d7
-.draw_vert:
-	move.w	d0,(a0)
-	adda.w	#160,a0
-	move.w	d1,(a1)
-	adda.w	#160,a1
-	dbra.w	d7,.draw_vert
 	rts
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
