@@ -63,19 +63,53 @@ wave_compute:
 	move.l	#wave_intro_update,update_routine
 	move.l	#wave_intro_draw,draw_routine
 
-	bra.s	wave_compute_core
+	bra	wave_compute_core
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Draw intro animation
 ;;;;;;;;
 wave_intro_update:
-	clr.l	update_routine
 	move.w	#$102,$ffff8240.w
 	move.w	#$fff,$ffff8250.w
+	move.l	most_recently_updated,a5
+	move.l	next_to_update,a6
+	move.w	2(a5),d0
+	tst.w	d0
+	bne.s	.increment_line
+	move.w	#16,d0
+.increment_line:
+	addq.w	#1,d0
+	move.w	d0,2(a6)
+	cmp.w	#128,d0
+	bne.s	.continue
+	clr.l	update_routine
+.continue:
 	rts
 
 wave_intro_draw:
+	move.l	back_to_draw_data,a6
+	move.l	back_drawn_data,a5
+
+	move.w	2(a5),d0
+	move.l	back_buffer,a0
+	addq.l	#6,a0
+	mulu.w	#160,d0
+	clr.w	(a0,d0.w)
+	clr.w	32(a0,d0.w)
+
+	move.w	2(a6),d0
+	move.l	back_buffer,a0
+	addq.l	#6,a0
+	mulu.w	#160,d0
+	move.w	#-1,(a0,d0.w)
+	move.w	#-1,32(a0,d0.w)
+
+	tst.w	2(a5)
+	beq.s	.draw_square
+	rts
+
+.draw_square:
 	move.l	back_buffer,a0
 	adda.w	#2598,a0	; 16*160+32+6
 	lea.l	26720(a0),a1
