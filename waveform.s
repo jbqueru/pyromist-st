@@ -22,6 +22,10 @@
 ; ***********************************************************************
 
 
+; The screen starts with one face fo the cube visible, as a square 120*120
+; The square splits into a 12*12 grid of 10*10 squares
+; The individual squares drift to be aligned on 16 pixels
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Format of precomputed graphics for the waveform spheres
 ;
@@ -37,6 +41,8 @@
 ; 512 bitmaps, 16*16 pixels, 1 bitplane
 ; total 16384 bytes
 ;;;;;;;;
+
+
 
 
 	.text
@@ -91,14 +97,14 @@ wave_intro_draw:
 	bne.s	.done_square
 
 	move.l	back_buffer,a0
-	adda.w	#2598,a0	; 16*160+32+6
-	lea.l	26720(a0),a1
-	moveq.l	#$000f,d0
+	adda.w	#6454,a0	; 40*160+48+6
+	lea.l	19040(a0),a1	; 119*160
+	move.w	#$0fff,d0
 	move.w	d0,(a0)
 	addq.l	#8,a0
 	move.w	d0,(a1)
 	addq.l	#8,a1
-	moveq.l	#9,d7
+	moveq.l	#5,d7
 	moveq.l	#$ffffffff,d0
 .draw_square_horiz:
 	move.w	d0,(a0)
@@ -106,14 +112,14 @@ wave_intro_draw:
 	move.w	d0,(a1)
 	addq.l	#8,a1
 	dbra.w	d7,.draw_square_horiz
-	move.w	#$f000,d0
+	move.w	#$fff0,d0
 	move.w	d0,(a0)
 	move.w	d0,(a1)
-	lea.l	72(a0),a0
-	lea.l	88(a0),a1
-	moveq.l	#$0008,d0
-	move.w	#$1000,d1
-	move.w	#165,d7
+	lea.l	104(a0),a0
+	lea.l	56(a0),a1
+	move.w	#$0800,d0
+	moveq.l	#$0010,d1
+	move.w	#117,d7
 .draw_square_vert:
 	move.w	d0,(a0)
 	adda.w	#160,a0
