@@ -83,7 +83,7 @@ wave_intro_update:
 	move.w	2(a5),d0
 	addq.w	#1,d0
 	move.w	d0,2(a6)
-	cmp.w	#128,d0
+	cmp.w	#500,d0
 	ble.s	.continue
 	clr.l	update_routine
 .continue:
@@ -129,18 +129,51 @@ wave_intro_draw:
 
 .done_square:
 	move.w	2(a5),d0
-	move.l	back_buffer,a0
-	addq.l	#6,a0
-	mulu.w	#160,d0
-	clr.w	(a0,d0.w)
-	clr.w	32(a0,d0.w)
+	move.w	2(a6),d1
 
-	move.w	2(a6),d0
+	add.w	d0,d0
+	add.w	d0,d0
+	add.w	d1,d1
+	add.w	d1,d1
+
+	cmp.w	#40,d0
+	bgt.s	.b1
+	move.w	#40,d0
+.b1:
+	cmp.w	#158,d0
+	blt.s	.b2
+	move.w	#158,d0
+.b2:
+	cmp.w	#40,d1
+	bgt.s	.a1
+	move.w	#40,d1
+.a1:
+	cmp.w	#158,d1
+	blt.s	.a2
+	move.w	#158,d1
+.a2:
+
+	move.w	d0,d2
+	addq.w	#1,d2
+
 	move.l	back_buffer,a0
-	addq.l	#6,a0
-	mulu.w	#160,d0
-	move.w	#-1,(a0,d0.w)
-	move.w	#-1,32(a0,d0.w)
+	mulu.w	#160,d2
+	lea.l	6(a0,d2.w),a0
+
+	sub.w	d0,d1
+	bra.s	.draw_split_vert2
+.draw_split_vert1:
+	move.w	#$0806,48(a0)
+	move.w	#$0180,56(a0)
+	move.w	#$6018,64(a0)
+	move.w	#$0601,72(a0)
+	move.w	#$8060,80(a0)
+	move.w	#$1806,88(a0)
+	move.w	#$0180,96(a0)
+	move.w	#$6010,104(a0)
+	adda.w	#160,a0
+.draw_split_vert2:
+	dbra.w	d1,.draw_split_vert1
 
 
 	rts
