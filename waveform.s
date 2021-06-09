@@ -203,18 +203,16 @@ wave_intro_draw:
 .c2:
 
 	cmp.w	d0,d1
-	beq	.done_horiz_split
+	beq.s	.done_horiz_split
 
 	addq.w	#1,d0
 
-
-;;; XXXX temp
 	move.l	back_buffer,a0
 
 	move.w	d0,d2
 	andi.w	#$01f0,d2
 	lsr.w	#1,d2
-	move.w	#$8000,d4
+	move.w	#$ffff,d4
 	andi.w	#$000f,d0
 	lsr.w	d0,d4
 
@@ -224,54 +222,18 @@ wave_intro_draw:
 	move.w	#$8000,d5
 	andi.w	#$000f,d1
 	lsr.w	d1,d5
+	subq.w	#1,d5
+	not.w	d5
 
 	cmp.w	d2,d3
 	bne.s	.two_blocks
+	and.w	d5,d4
 	or.w	d4,6(a0,d2.w)
-	or.w	d5,6(a0,d3.w)
 	rts
 
 .two_blocks:
 	or.w	d4,6(a0,d2.w)
-	or.w	d5,6(a0,d3.w)
-
-	rts
-;;; XXXX temp
-
-
-
-	move.w	d0,d2
-	andi.w	#$1f0,d2
-	lsr.w	#1,d2
-	move.w	d1,d3
-	andi.w	#$1f0,d3
-	lsr.w	#1,d3
-
-	andi.w	#15,d0
-	moveq.l	#-1,d4
-	lsr.w	d0,d4
-
-	andi.w	#15,d1
-	addq.w	#1,d1
-	moveq.l	#-1,d5
-	lsr.w	d1,d5
-	not.w	d5
-	moveq.l	#0,d5
-
-	move.l	back_buffer,a0
-	lea.l	6(a0,d2.w),a0
-
-	cmp.w	d2,d3
-	bne.s	.across_blocks
-
-	and.w	d5,d4
-	or.w	d4,(a0)
-
-	bra.s	.done_horiz_split
-
-.across_blocks:
-	or.w	d4,(a0)
-	or.w	d5,8(a0)
+	or.w	d5,14(a0,d2.w)
 
 .done_horiz_split:
 
