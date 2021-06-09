@@ -178,7 +178,9 @@ wave_intro_draw:
 
 
 	move.w	2(a5),d0
+	sub.w	#12,d0
 	move.w	2(a6),d1
+	sub.w	#12,d1
 
 	add.w	d0,d0
 	add.w	d0,d0
@@ -203,11 +205,9 @@ wave_intro_draw:
 .c2:
 
 	cmp.w	d0,d1
-	beq.s	.done_horiz_split
+	beq	.done_horiz_split
 
 	addq.w	#1,d0
-
-	move.l	back_buffer,a0
 
 	move.w	d0,d2
 	andi.w	#$01f0,d2
@@ -225,15 +225,81 @@ wave_intro_draw:
 	subq.w	#1,d5
 	not.w	d5
 
+	move.l	back_buffer,a0
+	lea.l	6(a0,d2.w),a0
+
 	cmp.w	d2,d3
 	bne.s	.two_blocks
 	and.w	d5,d4
-	or.w	d4,6(a0,d2.w)
+	or.w	d4,7840(a0)
+	or.w	d4,8000(a0)
+	or.w	d4,9440(a0)
+	or.w	d4,9600(a0)
+	or.w	d4,11040(a0)
+	or.w	d4,11200(a0)
+	or.w	d4,12640(a0)
+	or.w	d4,12800(a0)
+	or.w	d4,14240(a0)
+	or.w	d4,14400(a0)
+	or.w	d4,15840(a0)
+	or.w	d4,16000(a0)
+	or.w	d4,17440(a0)
+	or.w	d4,17600(a0)
+	or.w	d4,19040(a0)
+	or.w	d4,19200(a0)
+	or.w	d4,20640(a0)
+	or.w	d4,20800(a0)
+	or.w	d4,22240(a0)
+	or.w	d4,22400(a0)
+	or.w	d4,23840(a0)
+	or.w	d4,24000(a0)
 	rts
 
 .two_blocks:
-	or.w	d4,6(a0,d2.w)
-	or.w	d5,14(a0,d2.w)
+	or.w	d4,7840(a0)
+	or.w	d5,7848(a0)
+	or.w	d4,8000(a0)
+	or.w	d5,8008(a0)
+	or.w	d4,9440(a0)
+	or.w	d5,9448(a0)
+	or.w	d4,9600(a0)
+	or.w	d5,9608(a0)
+	or.w	d4,11040(a0)
+	or.w	d5,11048(a0)
+	or.w	d4,11200(a0)
+	or.w	d5,11208(a0)
+	or.w	d4,12640(a0)
+	or.w	d5,12648(a0)
+	or.w	d4,12800(a0)
+	or.w	d5,12808(a0)
+	or.w	d4,14240(a0)
+	or.w	d5,14248(a0)
+	or.w	d4,14400(a0)
+	or.w	d5,14408(a0)
+	or.w	d4,15840(a0)
+	or.w	d5,15848(a0)
+	or.w	d4,16000(a0)
+	or.w	d5,16008(a0)
+	or.w	d4,17440(a0)
+	or.w	d5,17448(a0)
+	or.w	d4,17600(a0)
+	or.w	d5,17608(a0)
+	or.w	d4,19040(a0)
+	or.w	d5,19048(a0)
+	or.w	d4,19200(a0)
+	or.w	d5,19208(a0)
+	or.w	d4,20640(a0)
+	or.w	d5,20648(a0)
+	or.w	d4,20800(a0)
+	or.w	d5,20808(a0)
+	or.w	d4,22240(a0)
+	or.w	d5,22248(a0)
+	or.w	d4,22400(a0)
+	or.w	d5,22408(a0)
+	or.w	d4,23840(a0)
+	or.w	d5,23848(a0)
+	or.w	d4,24000(a0)
+	or.w	d5,24008(a0)
 
 .done_horiz_split:
 
