@@ -203,7 +203,7 @@ wave_intro_draw:
 .c2:
 
 	cmp.w	d0,d1
-	beq.s	.done_horiz_split
+	beq	.done_horiz_split
 
 	addq.w	#1,d0
 
@@ -214,21 +214,31 @@ wave_intro_draw:
 	move.w	d0,d2
 	andi.w	#$01f0,d2
 	lsr.w	#1,d2
-	move.w	#$8000,d3
+	move.w	#$8000,d4
 	andi.w	#$000f,d0
-	lsr.w	d0,d3
-	or.w	d3,6(a0,d2.w)
+	lsr.w	d0,d4
 
-	move.w	d1,d2
-	andi.w	#$01f0,d2
-	lsr.w	#1,d2
-	move.w	#$8000,d3
+	move.w	d1,d3
+	andi.w	#$01f0,d3
+	lsr.w	#1,d3
+	move.w	#$8000,d5
 	andi.w	#$000f,d1
-	lsr.w	d1,d3
-	or.w	d3,6(a0,d2.w)
+	lsr.w	d1,d5
+
+	cmp.w	d2,d3
+	bne.s	.two_blocks
+	or.w	d4,6(a0,d2.w)
+	or.w	d5,6(a0,d3.w)
+	rts
+
+.two_blocks:
+	or.w	d4,6(a0,d2.w)
+	or.w	d5,6(a0,d3.w)
 
 	rts
 ;;; XXXX temp
+
+
 
 	move.w	d0,d2
 	andi.w	#$1f0,d2
