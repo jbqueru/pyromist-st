@@ -137,19 +137,19 @@ wave_intro_draw:
 	add.w	d1,d1
 
 	cmp.w	#40,d0
-	bgt.s	.b1
+	bpl.s	.b1
 	move.w	#40,d0
 .b1:
 	cmp.w	#158,d0
-	blt.s	.b2
+	bmi.s	.b2
 	move.w	#158,d0
 .b2:
 	cmp.w	#40,d1
-	bgt.s	.a1
+	bpl.s	.a1
 	move.w	#40,d1
 .a1:
 	cmp.w	#158,d1
-	blt.s	.a2
+	bmi.s	.a2
 	move.w	#158,d1
 .a2:
 
