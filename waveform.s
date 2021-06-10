@@ -253,7 +253,8 @@ wave_intro_draw:
 	or.w	d4,22400(a0)
 	or.w	d4,23840(a0)
 	or.w	d4,24000(a0)
-	rts
+
+	bra	.done_horiz_split
 
 .two_blocks:
 	or.w	d4,7840(a0)
@@ -302,6 +303,21 @@ wave_intro_draw:
 	or.w	d5,24008(a0)
 
 .done_horiz_split:
+
+
+	move.w	#120,d0
+	sub.w	2(a6),d0
+	tst.w	d0
+	blt.s	.no_anim
+	cmp.w	#40,d0
+	bgt.s	.no_anim
+
+	mulu.w	#160,d0
+	move.l	back_buffer,a0
+	move.w	#-1,86(a0,d0.w)
+
+	nop
+.no_anim:
 
 	rts
 
