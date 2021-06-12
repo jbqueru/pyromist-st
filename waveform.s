@@ -304,19 +304,57 @@ wave_intro_draw:
 
 .done_horiz_split:
 
+	moveq.l	#0,d0
+	move.w	2(a6),d0
 
-	move.w	#120,d0
-	sub.w	2(a6),d0
-	tst.w	d0
-	blt.s	.no_anim
-	cmp.w	#40,d0
-	bgt.s	.no_anim
+;	cmp.w	#66,d0
+;	bmi.s	.growth_done
+;	cmp.w	#66,2(a5)
+;	bpl.s	.old_code
+;	move.w	#66,d0
+.growth_done:
+	lsr.w	#3,d0
+	swap.w	d0
+	lsr.l	#4,d0
+	divu.w	#11,d0
 
-	mulu.w	#160,d0
+	andi.l	#$ffff,d0
+	lsl.l	#4,d0
+
+	move.l	#$00008000,d1
+
 	move.l	back_buffer,a0
-	move.w	#-1,86(a0,d0.w)
+	adda.w	#1198,a0
 
-	nop
+	moveq.l	#11,d7
+.draw_square:
+	move.w	#-1,(a0)
+	clr.w	160(a0)
+	clr.w	320(a0)
+	clr.w	480(a0)
+	clr.w	640(a0)
+	clr.w	800(a0)
+	clr.w	960(a0)
+	clr.w	1120(a0)
+	clr.w	1280(a0)
+	move.w	#-1,1440(a0)
+	adda.w	#1600,a0
+
+	add.l	d0,d1
+	swap.w	d1
+	move.w	d1,d2
+	clr.w	d1
+	swap.w	d1
+	bra.s	.clear_loop
+
+.clear_between:
+	clr.w	(a0)
+	adda.w	#160,a0
+.clear_loop:
+	dbra.w	d2,.clear_between
+	dbra.w	d7,.draw_square
+
+
 .no_anim:
 
 	rts
