@@ -346,12 +346,35 @@ wave_intro_draw:
 	clr.w	d1		; and clear it
 	swap.w	d1
 
+	moveq.l	#0,d3
 	bra.s	.clear_loop1	; enter loop
 .clear_between1:
-	clr.w	(a0)		; clear bottom half
+	move.w	d3,(a0)		; clear bottom half
+	move.w	d3,8(a0)
+	move.w	d3,16(a0)
+	move.w	d3,24(a0)
+	move.w	d3,32(a0)
+	move.w	d3,40(a0)
+	move.w	d3,48(a0)
+	move.w	d3,56(a0)
+	move.w	d3,64(a0)
+	move.w	d3,72(a0)
+	move.w	d3,80(a0)
+	move.w	d3,88(a0)
 	adda.w	#160,a0		; 	and post-increment
-	suba.w	#160,a1		; pre-decrement bottom half
-	clr.w	(a1)		; 	and clear
+	suba.w	#160,a1		; pre-decrement top half
+	move.w	d3,(a1)		; 	and clear
+	move.w	d3,8(a1)
+	move.w	d3,16(a1)
+	move.w	d3,24(a1)
+	move.w	d3,32(a1)
+	move.w	d3,40(a1)
+	move.w	d3,48(a1)
+	move.w	d3,56(a1)
+	move.w	d3,64(a1)
+	move.w	d3,72(a1)
+	move.w	d3,80(a1)
+	move.w	d3,88(a1)
 .clear_loop1:
 	dbra.w	d2,.clear_between1
 
@@ -360,31 +383,52 @@ wave_intro_draw:
 
 	moveq.l	#5,d7		; draw 6 rows of squares on each half
 
-.draw_square:
-; XXX optimize - move to registers to look more like final code
-	move.w	#$1ff8,(a0)
-	move.w	#$1008,160(a0)
-	move.w	#$1008,320(a0)
-	move.w	#$1008,480(a0)
-	move.w	#$1008,640(a0)
-	move.w	#$1008,800(a0)
-	move.w	#$1008,960(a0)
-	move.w	#$1008,1120(a0)
-	move.w	#$1008,1280(a0)
-	move.w	#$1ff8,1440(a0)
-	adda.w	#1600,a0
+	lea.l	wave_spread_gfx,a2
+	move.l	#$1ff81008,(a2)
 
+
+.draw_square:
 	suba.w	#1600,a1
-	move.w	#$1ff8,(a1)
-	move.w	#$1008,160(a1)
-	move.w	#$1008,320(a1)
-	move.w	#$1008,480(a1)
-	move.w	#$1008,640(a1)
-	move.w	#$1008,800(a1)
-	move.w	#$1008,960(a1)
-	move.w	#$1008,1120(a1)
-	move.w	#$1008,1280(a1)
-	move.w	#$1ff8,1440(a1)
+
+	moveq.l	#11,d2
+
+.draw_column:
+	move.l	(a2),d3
+
+	move.w	d3,160(a0)
+	move.w	d3,320(a0)
+	move.w	d3,480(a0)
+	move.w	d3,640(a0)
+	move.w	d3,800(a0)
+	move.w	d3,960(a0)
+	move.w	d3,1120(a0)
+	move.w	d3,1280(a0)
+
+	move.w	d3,160(a1)
+	move.w	d3,320(a1)
+	move.w	d3,480(a1)
+	move.w	d3,640(a1)
+	move.w	d3,800(a1)
+	move.w	d3,960(a1)
+	move.w	d3,1120(a1)
+	move.w	d3,1280(a1)
+
+	swap.w	d3
+
+	move.w	d3,(a0)
+	move.w	d3,1440(a0)
+	move.w	d3,(a1)
+	move.w	d3,1440(a1)
+
+	addq.w	#8,a0
+	addq.w	#8,a1
+
+	dbra.w	d2,.draw_column
+
+	suba.w	#96,a0
+	suba.w	#96,a1
+
+	adda.w	#1600,a0
 
 	add.l	d0,d1		; accumulate fractional pixels
 	swap.w	d1
@@ -392,12 +436,35 @@ wave_intro_draw:
 	clr.w	d1		; and clear it
 	swap.w	d1
 
+	moveq.l	#0,d3
 	bra.s	.clear_loop2	; enter loop
 .clear_between2:
-	clr.w	(a0)		; clear bottom half
+	move.w	d3,(a0)		; clear bottom half
+	move.w	d3,8(a0)
+	move.w	d3,16(a0)
+	move.w	d3,24(a0)
+	move.w	d3,32(a0)
+	move.w	d3,40(a0)
+	move.w	d3,48(a0)
+	move.w	d3,56(a0)
+	move.w	d3,64(a0)
+	move.w	d3,72(a0)
+	move.w	d3,80(a0)
+	move.w	d3,88(a0)
 	adda.w	#160,a0		; 	and post-increment
-	suba.w	#160,a1		; pre-decrement bottom half
-	clr.w	(a1)		; 	and clear
+	suba.w	#160,a1		; pre-decrement top half
+	move.w	d3,(a1)		; 	and clear
+	move.w	d3,8(a1)
+	move.w	d3,16(a1)
+	move.w	d3,24(a1)
+	move.w	d3,32(a1)
+	move.w	d3,40(a1)
+	move.w	d3,48(a1)
+	move.w	d3,56(a1)
+	move.w	d3,64(a1)
+	move.w	d3,72(a1)
+	move.w	d3,80(a1)
+	move.w	d3,88(a1)
 .clear_loop2:
 	dbra.w	d2,.clear_between2
 
@@ -1469,5 +1536,7 @@ wave_f3:
 wave_f4:
 	ds.w	2
 
+wave_spread_gfx:
+	ds.l	12
 wave_cube_3d_xyz:
 	ds.w	24
