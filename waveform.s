@@ -83,7 +83,7 @@ wave_intro_update:
 	move.w	2(a5),d0
 	addq.w	#1,d0
 	move.w	d0,2(a6)
-	cmp.w	#500,d0
+	cmp.w	#1000,d0
 	ble.s	.continue
 	clr.l	update_routine
 .continue:
@@ -307,24 +307,47 @@ wave_intro_draw:
 	moveq.l	#0,d0
 	move.w	2(a6),d0
 
+	cmp.w	#72,d0
+	bmi	.no_anim
+
+	subi.w	#72,d0
+
 ;	cmp.w	#66,d0
 ;	bmi.s	.growth_done
 ;	cmp.w	#66,2(a5)
 ;	bpl.s	.old_code
 ;	move.w	#66,d0
 .growth_done:
-	lsr.w	#3,d0
+	lsr.w	#3,d0		; slow down the animation by 8x
+
+	cmpi.w	#66,d0
+	bmi.s	.in_range
+	moveq.l	#66,d0
+.in_range:
+
 	swap.w	d0
 	lsr.l	#4,d0
-	divu.w	#11,d0
+	divu.w	#22,d0
 
 	andi.l	#$ffff,d0
-	lsl.l	#4,d0
+	move.l	d0,d1
+
+	lsl.l	#5,d0		; half of the space between squares, in 16:16
+
+
+	mulu.w	#11,d1
+	lsl.l	#4,d1
+	swap	d1
+	sub.w	#40,d1
+	neg.w	d1
+	mulu.w	#160,d1
+	move.l	back_buffer,a0
+	adda.w	#78,a0
+	adda.w	d1,a0
+
 
 	move.l	#$00008000,d1
 
-	move.l	back_buffer,a0
-	adda.w	#1198,a0
 
 	moveq.l	#11,d7
 .draw_square:
