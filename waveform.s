@@ -76,13 +76,13 @@ wave_compute:
 ; Draw intro animation
 ;;;;;;;;
 wave_intro_update:
-	move.w	#$102,$ffff8240.w
-	move.w	#$fff,$ffff8250.w
+;;; Frame counter, as basic as it gets.
 	move.l	most_recently_updated,a5
 	move.l	next_to_update,a6
 	move.w	2(a5),d0
 	addq.w	#1,d0
 	move.w	d0,2(a6)
+; Stop after 350 frames. Animation is technically 336 frames long.
 	cmp.w	#350,d0
 	ble.s	.continue
 	clr.l	update_routine
@@ -93,6 +93,7 @@ wave_intro_draw:
 	move.l	back_to_draw_data,a6
 	move.l	back_drawn_data,a5
 
+; Draw the square frame if it hasn't been drawn yet
 	tst.w	2(a5)
 	bne.s	.done_square
 
@@ -128,6 +129,8 @@ wave_intro_draw:
 	dbra.w	d7,.draw_square_vert
 
 .done_square:
+
+;;; Draw horizontal lines slicing through the square
 	move.w	2(a5),d0
 	move.w	2(a6),d1
 
@@ -176,7 +179,7 @@ wave_intro_draw:
 	dbra.w	d1,.draw_split_vert1
 
 
-
+;;; Draw vertical lines slicing through the square
 	move.w	2(a5),d0
 	sub.w	#12,d0
 	move.w	2(a6),d1
@@ -303,6 +306,8 @@ wave_intro_draw:
 	or.w	d5,24008(a0)
 
 .done_horiz_split:
+
+;;; Spread the small squares into position
 	moveq.l	#0,d0
 	move.w	2(a6),d0
 
@@ -406,6 +411,10 @@ wave_intro_draw:
 ;;;;;;;;
 
 wave_compute_core:
+;;; Set palette for pre-animation
+	move.w	#$102,$ffff8240.w
+	move.w	#$fff,$ffff8250.w
+
 ;;; Precompute sphere graphics
 ; d0,d1,d2: bit planes
 ; d3: pixel color
