@@ -316,49 +316,52 @@ wave_intro_draw:
 	bmi	.no_anim
 	subi.w	#72,d0
 
+; TODO; stop drawing when the animation is done
+;   	currently wastes time by continuously drawing the last frame
+;	still gotta be careful to draw the last frame on both screens
 .growth_done:
 	lsr.w	#3,d0		; slow down the animation by 8x
 
-	cmpi.w	#33,d0
+	cmpi.w	#33,d0		; 33 is 6*5.5 (6 pixels * 11 intervals / 2)
 	bmi.s	.in_range
 	moveq.l	#33,d0
 .in_range:
 
-	swap.w	d0
-	lsr.l	#4,d0
-	divu.w	#11,d0
-
-	andi.l	#$ffff,d0
-	lsl.l	#4,d0		; half of the space between squares, in 16:16
-
+; Compute pixel count between squares (including fractional pixels)
+	swap.w	d0		; 16:16
+	lsr.l	#4,d0		; 20:12
+	divu.w	#11,d0		; junk:4:12
+	andi.l	#$ffff,d0	; 20:12
+	lsl.l	#4,d0		; 16:16
 
 	move.l	back_buffer,a0
-	adda.w	#16038,a0
-	move.l	a0,a1
+	adda.w	#16038,a0	; offset to left edge, mid-height, last plane
+	move.l	a0,a1		; a0 moves down, a1 moves up
 
+	move.l	#$00008000,d1	; running count of fractional pixels
 
-	move.l	#$00008000,d1
-
-	add.l	d0,d1
+	add.l	d0,d1		; accumulate fractional pixels
 	swap.w	d1
-	move.w	d1,d2
-	clr.w	d1
+	move.w	d1,d2		; extract increment of whole pixels
+	clr.w	d1		; and clear it
 	swap.w	d1
-	bra.s	.clear_loop1
 
+	bra.s	.clear_loop1	; enter loop
 .clear_between1:
-	clr.w	(a0)
-	adda.w	#160,a0
-	suba.w	#160,a1
-	clr.w	(a1)
+	clr.w	(a0)		; clear bottom half
+	adda.w	#160,a0		; 	and post-increment
+	suba.w	#160,a1		; pre-decrement bottom half
+	clr.w	(a1)		; 	and clear
 .clear_loop1:
 	dbra.w	d2,.clear_between1
 
-	add.l	d0,d0
+	add.l	d0,d0		; double the increment between lines
+				; (center has a half-increment on either side)
 
-	moveq.l	#5,d7
+	moveq.l	#5,d7		; draw 6 rows of squares on each half
+
 .draw_square:
-
+; XXX optimize - move to registers to look more like final code
 	move.w	#$1ff8,(a0)
 	move.w	#$1008,160(a0)
 	move.w	#$1008,320(a0)
@@ -383,21 +386,20 @@ wave_intro_draw:
 	move.w	#$1008,1280(a1)
 	move.w	#$1ff8,1440(a1)
 
-	add.l	d0,d1
+	add.l	d0,d1		; accumulate fractional pixels
 	swap.w	d1
-	move.w	d1,d2
-	clr.w	d1
+	move.w	d1,d2		; extract increment of whole pixels
+	clr.w	d1		; and clear it
 	swap.w	d1
-	bra.s	.clear_loop2
 
+	bra.s	.clear_loop2	; enter loop
 .clear_between2:
-	clr.w	(a0)
-	adda.w	#160,a0
-	suba.w	#160,a1
-	clr.w	(a1)
+	clr.w	(a0)		; clear bottom half
+	adda.w	#160,a0		; 	and post-increment
+	suba.w	#160,a1		; pre-decrement bottom half
+	clr.w	(a1)		; 	and clear
 .clear_loop2:
 	dbra.w	d2,.clear_between2
-
 
 	dbra.w	d7,.draw_square
 
